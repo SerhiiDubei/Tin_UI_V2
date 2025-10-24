@@ -158,6 +158,11 @@
   color: white;
 }
 
+.swipe-hint.neutral {
+  background: rgba(158, 158, 158, 0.9);
+  color: white;
+}
+
 .swipe-instructions {
   position: absolute;
   width: 100%;
