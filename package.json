@@ -1,0 +1,28 @@
+{
+  "name": "tinder-ai-feedback",
+  "version": "1.0.0",
+  "description": "AI Feedback Platform with Tinder-like UI",
+  "main": "index.js",
+  "type": "module",
+  "scripts": {
+    "setup": "node scripts/setup.js",
+    "install:all": "npm install && cd frontend && npm install && cd ../backend && npm install",
+    "dev": "concurrently \"npm run dev:frontend\" \"npm run dev:backend\"",
+    "dev:frontend": "cd frontend && npm start",
+    "dev:backend": "cd backend && npm run dev",
+    "build:frontend": "cd frontend && npm run build",
+    "start:backend": "cd backend && npm start"
+  },
+  "keywords": [
+    "ai",
+    "feedback",
+    "tinder",
+    "swipe",
+    "machine-learning"
+  ],
+  "author": "Your Name",
+  "license": "MIT",
+  "devDependencies": {
+    "concurrently": "^8.2.2"
+  }
+}
