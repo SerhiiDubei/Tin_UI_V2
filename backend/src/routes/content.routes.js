@@ -1,18 +1,27 @@
 import express from 'express';
 import supabase from '../db/supabase.js';
-import { generateImage } from '../services/replicate.service.js';
+import { generateContent, batchGenerate } from '../services/replicate.service.js';
 import { enhancePrompt } from '../services/openai.service.js';
 import { getUserInsights } from '../services/insights.service.js';
+import { getDefaultModel } from '../config/models.js';
 
 const router = express.Router();
 
 /**
  * POST /api/content/generate
- * Generate new content
+ * Generate new content (single or batch)
  */
 router.post('/generate', async (req, res) => {
   try {
-    const { prompt, userId, templateId, type = 'image' } = req.body;
+    const { 
+      prompt, 
+      userId, 
+      templateId, 
+      contentType = 'image',
+      modelKey,
+      count = 1,
+      customParams = {}
+    } = req.body;
     
     if (!prompt) {
       return res.status(400).json({ error: 'Prompt is required' });
@@ -53,36 +62,89 @@ router.post('/generate', async (req, res) => {
     // Enhance prompt with OpenAI
     const { enhancedPrompt } = await enhancePrompt(prompt, context);
     
-    // Generate content with Replicate
-    const result = await generateImage(enhancedPrompt, template?.model_params || {});
+    // Determine model to use
+    const selectedModel = modelKey || getDefaultModel(contentType);
     
-    if (!result.success) {
-      return res.status(500).json({ error: result.error });
+    // Batch or single generation
+    if (count > 1) {
+      // Batch generation
+      const batchResult = await batchGenerate(
+        enhancedPrompt, 
+        contentType, 
+        selectedModel, 
+        count,
+        { ...template?.model_params, ...customParams }
+      );
+      
+      if (!batchResult.success) {
+        return res.status(500).json({ error: 'Batch generation failed', details: batchResult });
+      }
+      
+      // Save all successful generations to database
+      const contentToInsert = batchResult.results
+        .filter(r => r.success)
+        .map(r => ({
+          url: r.url,
+          media_type: contentType,
+          original_prompt: prompt,
+          enhanced_prompt: enhancedPrompt,
+          model: r.model,
+          template_id: templateId || null,
+          user_id: userId || null,
+          generation_params: { ...template?.model_params, ...customParams, modelKey: selectedModel }
+        }));
+      
+      const { data: savedContent, error: insertError } = await supabase
+        .from('content')
+        .insert(contentToInsert)
+        .select();
+      
+      if (insertError) throw insertError;
+      
+      return res.json({
+        success: true,
+        batch: true,
+        total: count,
+        successful: batchResult.successful,
+        failed: batchResult.failed,
+        content: savedContent
+      });
+    } else {
+      // Single generation
+      const result = await generateContent(
+        enhancedPrompt, 
+        contentType, 
+        selectedModel,
+        { ...template?.model_params, ...customParams }
+      );
+      
+      if (!result.success) {
+        return res.status(500).json({ error: result.error });
+      }
+      
+      // Save to database
+      const { data: content, error } = await supabase
+        .from('content')
+        .insert({
+          url: result.url,
+          media_type: contentType,
+          original_prompt: prompt,
+          enhanced_prompt: enhancedPrompt,
+          model: result.model,
+          template_id: templateId || null,
+          user_id: userId || null,
+          generation_params: { ...template?.model_params, ...customParams, modelKey: selectedModel }
+        })
+        .select()
+        .single();
+      
+      if (error) throw error;
+      
+      res.json({
+        success: true,
+        content: content
+      });
     }
-    
-    // Save to database
-    const { data: content, error } = await supabase
-      .from('content')
-      .insert({
-        url: result.url,
-        type: type,
-        original_prompt: prompt,
-        enhanced_prompt: enhancedPrompt,
-        final_prompt: enhancedPrompt,
-        model: result.model,
-        template_id: templateId || null,
-        user_id: userId || null,
-        meta_json: template?.model_params || {}
-      })
-      .select()
-      .single();
-    
-    if (error) throw error;
-    
-    res.json({
-      success: true,
-      content: content
-    });
   } catch (error) {
     console.error('Generate content error:', error);
     res.status(500).json({ error: error.message });

@@ -31,10 +31,17 @@ async function fetchAPI(endpoint, options = {}) {
  */
 export const contentAPI = {
   // Generate new content
-  generate: (prompt, userId, templateId = null) => {
+  generate: (prompt, userId, templateId = null, contentType = 'image', modelKey = null, count = 1) => {
     return fetchAPI('/content/generate', {
       method: 'POST',
-      body: JSON.stringify({ prompt, userId, templateId })
+      body: JSON.stringify({ 
+        prompt, 
+        userId, 
+        templateId, 
+        contentType, 
+        modelKey, 
+        count 
+      })
     });
   },
   
