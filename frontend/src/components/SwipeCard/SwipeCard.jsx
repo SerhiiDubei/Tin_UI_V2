@@ -114,10 +114,10 @@ const SwipeCard = ({ content, onSwipe }) => {
       >
         {/* Content Display */}
         <div className="card-content">
-          {content.media_type === 'image' && content.url && (
+          {(content.media_type === 'image' || content.type === 'image') && content.url && (
             <img
               src={content.url}
-              alt={content.prompt || 'Generated content'}
+              alt={content.prompt || content.original_prompt || 'Generated content'}
               className="card-image"
               draggable="false"
               onError={(e) => {
@@ -126,7 +126,7 @@ const SwipeCard = ({ content, onSwipe }) => {
               }}
             />
           )}
-          {content.media_type === 'video' && content.url && (
+          {(content.media_type === 'video' || content.type === 'video') && content.url && (
             <video
               src={content.url}
               className="card-video"
@@ -139,16 +139,16 @@ const SwipeCard = ({ content, onSwipe }) => {
               }}
             />
           )}
-          {content.media_type === 'audio' && content.url && (
+          {(content.media_type === 'audio' || content.type === 'audio') && content.url && (
             <div className="card-audio-container">
               <audio src={content.url} controls className="card-audio" preload="metadata" />
-              <p className="audio-title">{content.prompt || 'Audio Content'}</p>
+              <p className="audio-title">{content.prompt || content.original_prompt || 'Audio Content'}</p>
             </div>
           )}
-          {(!content.url || !['image', 'video', 'audio'].includes(content.media_type)) && (
+          {(!content.url || !['image', 'video', 'audio'].includes(content.media_type || content.type)) && (
             <div className="card-text">
-              <h3>{content.prompt || 'Content'}</h3>
-              <p>Media type: {content.media_type || 'unknown'}</p>
+              <h3>{content.prompt || content.original_prompt || 'Content'}</h3>
+              <p>Media type: {content.media_type || content.type || 'unknown'}</p>
               {content.model && <p className="card-model-info">Model: {content.model}</p>}
             </div>
           )}
@@ -156,9 +156,9 @@ const SwipeCard = ({ content, onSwipe }) => {
 
         {/* Metadata */}
         <div className="card-info">
-          <h3>{content.prompt || 'Generated Content'}</h3>
+          <h3>{content.prompt || content.original_prompt || content.enhanced_prompt || 'Generated Content'}</h3>
           <div className="card-meta">
-            <span className="card-type">{content.media_type || 'unknown'}</span>
+            <span className="card-type">{content.media_type || content.type || 'unknown'}</span>
             {content.model && <span className="card-model">{content.model}</span>}
           </div>
           {content.template_id && (
