@@ -85,13 +85,18 @@ router.post('/generate', async (req, res) => {
         .filter(r => r.success)
         .map(r => ({
           url: r.url,
-          media_type: contentType,
+          type: contentType,
           original_prompt: prompt,
           enhanced_prompt: enhancedPrompt,
           model: r.model,
           template_id: templateId || null,
           user_id: userId || null,
-          generation_params: { ...template?.model_params, ...customParams, modelKey: selectedModel }
+          meta_json: { 
+            ...template?.model_params, 
+            ...customParams, 
+            modelKey: selectedModel,
+            contentType: contentType 
+          }
         }));
       
       const { data: savedContent, error: insertError } = await supabase
@@ -127,13 +132,18 @@ router.post('/generate', async (req, res) => {
         .from('content')
         .insert({
           url: result.url,
-          media_type: contentType,
+          type: contentType,
           original_prompt: prompt,
           enhanced_prompt: enhancedPrompt,
           model: result.model,
           template_id: templateId || null,
           user_id: userId || null,
-          generation_params: { ...template?.model_params, ...customParams, modelKey: selectedModel }
+          meta_json: { 
+            ...template?.model_params, 
+            ...customParams, 
+            modelKey: selectedModel,
+            contentType: contentType 
+          }
         })
         .select()
         .single();

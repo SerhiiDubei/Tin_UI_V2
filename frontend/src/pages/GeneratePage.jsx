@@ -248,13 +248,13 @@ function GeneratePage() {
             <div className="content-grid">
               {myContent.map((item) => (
                 <div key={item.id} className="content-item">
-                  {item.media_type === 'image' && (
+                  {item.type === 'image' && (
                     <img src={item.url} alt={item.original_prompt} className="content-thumbnail" />
                   )}
-                  {item.media_type === 'video' && (
+                  {item.type === 'video' && (
                     <video src={item.url} className="content-thumbnail" controls />
                   )}
-                  {item.media_type === 'audio' && (
+                  {item.type === 'audio' && (
                     <div className="audio-thumbnail">
                       <span>🎵</span>
                       <audio src={item.url} controls style={{width: '100%', marginTop: '10px'}} />
@@ -262,7 +262,7 @@ function GeneratePage() {
                   )}
                   <div className="content-item-info">
                     <p className="content-prompt">{item.original_prompt}</p>
-                    <p className="content-type-badge">{item.media_type}</p>
+                    <p className="content-type-badge">{item.type}</p>
                   </div>
                 </div>
               ))}
