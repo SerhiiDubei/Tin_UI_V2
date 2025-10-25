@@ -1,18 +1,16 @@
 import React, { useState, useEffect } from 'react';
 import { insightsAPI } from '../services/api';
+import { useAuth } from '../contexts/AuthContext';
 import Button from '../components/Button';
 import Card from '../components/Card';
 import Loading from '../components/Loading';
 import './SettingsPage.css';
 
 function SettingsPage() {
-  const [userId, setUserId] = useState(
-    localStorage.getItem('userId') || process.env.REACT_APP_DEFAULT_USER_ID || 'demo-user-123'
-  );
-  const [tempUserId, setTempUserId] = useState(userId);
+  const { user } = useAuth();
+  const [userId] = useState(user?.id || 'demo-user-123');
   const [userInsights, setUserInsights] = useState(null);
   const [loading, setLoading] = useState(false);
-  const [saved, setSaved] = useState(false);
 
   useEffect(() => {
     loadUserInsights();
@@ -30,12 +28,7 @@ function SettingsPage() {
     }
   };
 
-  const handleSaveUserId = () => {
-    localStorage.setItem('userId', tempUserId);
-    setUserId(tempUserId);
-    setSaved(true);
-    setTimeout(() => setSaved(false), 2000);
-  };
+
 
   const handleResetInsights = async () => {
     if (!window.confirm('Are you sure you want to reset your insights? This will clear all your preferences.')) {
@@ -78,30 +71,13 @@ function SettingsPage() {
       <div className="settings-container">
         <h1>⚙️ Settings</h1>
 
-        {/* User ID Configuration */}
-        <Card title="👤 User Identity" className="settings-card">
+        {/* User Profile */}
+        <Card title="👤 User Profile" className="settings-card">
           <div className="setting-group">
-            <label htmlFor="userId">User ID</label>
-            <p className="setting-description">
-              This ID identifies your preferences and swipe history. Change it to switch between different user profiles.
-            </p>
-            <div className="input-with-button">
-              <input
-                id="userId"
-                type="text"
-                value={tempUserId}
-                onChange={(e) => setTempUserId(e.target.value)}
-                placeholder="Enter your user ID"
-                className="settings-input"
-              />
-              <Button 
-                onClick={handleSaveUserId}
-                disabled={tempUserId === userId || !tempUserId.trim()}
-              >
-                Save
-              </Button>
-            </div>
-            {saved && <p className="success-message">✓ User ID saved successfully!</p>}
+            <p><strong>Username:</strong> {user?.username}</p>
+            <p><strong>Email:</strong> {user?.email}</p>
+            <p><strong>Role:</strong> {user?.role}</p>
+            <p><strong>User ID:</strong> <code>{userId}</code></p>
           </div>
         </Card>
 

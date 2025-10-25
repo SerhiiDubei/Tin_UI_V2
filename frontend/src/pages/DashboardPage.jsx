@@ -1,8 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { insightsAPI, ratingsAPI, contentAPI } from '../services/api';
+import { useAuth } from '../contexts/AuthContext';
 import './DashboardPage.css';
 
 function DashboardPage() {
+  const { user } = useAuth();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [dashboardData, setDashboardData] = useState(null);
@@ -11,7 +13,7 @@ function DashboardPage() {
   const [userInsights, setUserInsights] = useState(null);
   const [refreshing, setRefreshing] = useState(false);
 
-  const userId = process.env.REACT_APP_DEFAULT_USER_ID || 'demo-user-123';
+  const userId = user?.id || 'demo-user-123';
 
   useEffect(() => {
     loadDashboardData();

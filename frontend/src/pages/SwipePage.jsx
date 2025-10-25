@@ -1,10 +1,12 @@
 import React, { useEffect, useState } from 'react';
 import SwipeCard from '../components/SwipeCard';
 import useSwipe from '../hooks/useSwipe';
+import { useAuth } from '../contexts/AuthContext';
 import './SwipePage.css';
 
 function SwipePage() {
-  const userId = process.env.REACT_APP_DEFAULT_USER_ID || 'demo-user-123';
+  const { user } = useAuth();
+  const userId = user?.id || 'demo-user-123';
   const { currentContent, loading, error, swipeHistory, loadNext, handleSwipe } = useSwipe(userId);
   const [showComment, setShowComment] = useState(false);
   const [comment, setComment] = useState('');
@@ -69,8 +71,33 @@ function SwipePage() {
     return (
       <div className="swipe-page">
         <div className="empty-container">
-          <p>🎉 No more content to review!</p>
-          <p>You've reviewed {swipeHistory.length} items.</p>
+          {swipeHistory.length === 0 ? (
+            <>
+              <p>🎭 No content available yet</p>
+              <p>Generate some content first to start swiping!</p>
+              <button 
+                onClick={() => window.location.href = '/generate'}
+                style={{
+                  marginTop: '1rem',
+                  padding: '0.75rem 1.5rem',
+                  background: 'white',
+                  border: 'none',
+                  borderRadius: '8px',
+                  fontSize: '1rem',
+                  fontWeight: 'bold',
+                  cursor: 'pointer',
+                  color: '#667eea'
+                }}
+              >
+                Go to Generate Page →
+              </button>
+            </>
+          ) : (
+            <>
+              <p>🎉 No more content to review!</p>
+              <p>You've reviewed {swipeHistory.length} items.</p>
+            </>
+          )}
         </div>
       </div>
     );
