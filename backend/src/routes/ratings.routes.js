@@ -45,7 +45,14 @@ router.post('/', async (req, res) => {
       });
     }
     
-    // Create rating
+    // Get content info for metadata
+    const { data: content } = await supabase
+      .from('content')
+      .select('type, model, template_id')
+      .eq('id', contentId)
+      .single();
+    
+    // Create rating with metadata
     const { data: rating, error } = await supabase
       .from('ratings')
       .insert({
@@ -54,7 +61,14 @@ router.post('/', async (req, res) => {
         direction: direction,
         comment: comment,
         latency_ms: latencyMs,
-        user_weight: userWeight
+        user_weight: userWeight,
+        meta_json: {
+          content_type: content?.type || 'unknown',
+          content_model: content?.model || 'unknown',
+          template_id: content?.template_id || null,
+          timestamp: new Date().toISOString(),
+          swipe_session: Date.now()
+        }
       })
       .select()
       .single();

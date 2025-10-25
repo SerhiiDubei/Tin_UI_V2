@@ -3,7 +3,6 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta http-equiv="refresh" content="0; url=./frontend/build/index.html">
   <meta name="description" content="Tinder AI Feedback Platform - AI-powered platform that learns your preferences through Tinder-style swipes">
   <title>Tinder AI Feedback Platform</title>
   <style>
@@ -57,10 +56,48 @@
   </div>
   
   <script>
-    // Redirect to the React app
-    setTimeout(function() {
-      window.location.href = './frontend/build/index.html';
-    }, 1000);
+    // Check if we're on GitHub Pages
+    const isGitHubPages = window.location.hostname === 'serhiidubei.github.io';
+    
+    if (isGitHubPages) {
+      // On GitHub Pages, setup needs different approach
+      // Show message that backend setup is required
+      document.body.innerHTML = `
+        <div class="container" style="max-width: 800px; text-align: left; padding: 2rem;">
+          <h1>🔥 Tinder AI Feedback Platform</h1>
+          <div style="background: rgba(255,255,255,0.1); padding: 1.5rem; border-radius: 8px; margin-top: 2rem;">
+            <h2 style="margin-top: 0;">⚠️ Setup Required</h2>
+            <p>This application requires a backend server to function properly.</p>
+            
+            <h3>📦 Run Locally:</h3>
+            <ol>
+              <li>Clone the repository: <code style="background: rgba(0,0,0,0.3); padding: 0.2rem 0.5rem; border-radius: 4px;">git clone https://github.com/SerhiiDubei/Tin_UI_V2.git</code></li>
+              <li>Install dependencies: <code style="background: rgba(0,0,0,0.3); padding: 0.2rem 0.5rem; border-radius: 4px;">npm install && npm run install:all</code></li>
+              <li>Configure environment: <code style="background: rgba(0,0,0,0.3); padding: 0.2rem 0.5rem; border-radius: 4px;">node scripts/setup.js</code></li>
+              <li>Run application: <code style="background: rgba(0,0,0,0.3); padding: 0.2rem 0.5rem; border-radius: 4px;">npm run dev</code></li>
+            </ol>
+            
+            <h3>📚 Documentation:</h3>
+            <ul>
+              <li><a href="https://github.com/SerhiiDubei/Tin_UI_V2/blob/main/README.md" style="color: white;">README.md</a> - Quick start guide</li>
+              <li><a href="https://github.com/SerhiiDubei/Tin_UI_V2/blob/main/TECHNICAL.md" style="color: white;">TECHNICAL.md</a> - Technical documentation</li>
+              <li><a href="https://github.com/SerhiiDubei/Tin_UI_V2/blob/main/GUIDES.md" style="color: white;">GUIDES.md</a> - User & developer guides</li>
+            </ul>
+            
+            <p style="margin-top: 2rem;">
+              <a href="https://github.com/SerhiiDubei/Tin_UI_V2" style="display: inline-block; background: white; color: #667eea; padding: 0.75rem 1.5rem; border-radius: 8px; text-decoration: none; font-weight: bold;">
+                📂 View on GitHub
+              </a>
+            </p>
+          </div>
+        </div>
+      `;
+    } else {
+      // Local development - redirect to frontend
+      setTimeout(function() {
+        window.location.href = './frontend/build/index.html';
+      }, 1000);
+    }
   </script>
 </body>
 </html>
