@@ -122,7 +122,13 @@ const SwipeCard = ({ content, onSwipe }) => {
               draggable="false"
               onError={(e) => {
                 e.target.style.display = 'none';
-                e.target.parentElement.innerHTML = '<div class="card-text"><h3>Image failed to load</h3></div>';
+                const parent = e.target.parentElement;
+                if (parent) {
+                  const errorDiv = document.createElement('div');
+                  errorDiv.className = 'card-text';
+                  errorDiv.innerHTML = '<h3>Image failed to load</h3>';
+                  parent.appendChild(errorDiv);
+                }
               }}
             />
           )}
@@ -135,7 +141,13 @@ const SwipeCard = ({ content, onSwipe }) => {
               preload="metadata"
               onError={(e) => {
                 e.target.style.display = 'none';
-                e.target.parentElement.innerHTML = '<div class="card-text"><h3>Video failed to load</h3></div>';
+                const parent = e.target.parentElement;
+                if (parent) {
+                  const errorDiv = document.createElement('div');
+                  errorDiv.className = 'card-text';
+                  errorDiv.innerHTML = '<h3>Video failed to load</h3>';
+                  parent.appendChild(errorDiv);
+                }
               }}
             />
           )}

@@ -213,7 +213,7 @@ router.get('/:id', async (req, res) => {
     
     if (error) throw error;
     
-    res.json({ success: true, content: data });
+    res.json({ success: true, data: data });
   } catch (error) {
     console.error('Get content error:', error);
     res.status(500).json({ error: error.message });

@@ -12,11 +12,18 @@ function DashboardPage() {
   const [topContent, setTopContent] = useState([]);
   const [userInsights, setUserInsights] = useState(null);
   const [refreshing, setRefreshing] = useState(false);
+  const [myContent, setMyContent] = useState([]);
+  const [loadingMyContent, setLoadingMyContent] = useState(false);
+  const [selectedContent, setSelectedContent] = useState(null);
+  const [showContentModal, setShowContentModal] = useState(false);
+  const [userRating, setUserRating] = useState(null);
+  const [loadingRating, setLoadingRating] = useState(false);
 
   const userId = user?.id || 'demo-user-123';
 
   useEffect(() => {
     loadDashboardData();
+    loadMyContent();
   }, []);
 
   const loadDashboardData = async () => {
@@ -51,6 +58,20 @@ function DashboardPage() {
     }
   };
 
+  const loadMyContent = async () => {
+    try {
+      setLoadingMyContent(true);
+      const response = await contentAPI.list({ userId: userId, limit: 50 });
+      if (response.success && response.content) {
+        setMyContent(response.content);
+      }
+    } catch (err) {
+      console.error('Failed to load my content:', err);
+    } finally {
+      setLoadingMyContent(false);
+    }
+  };
+
   const handleRefreshInsights = async () => {
     try {
       setRefreshing(true);
@@ -62,6 +83,31 @@ function DashboardPage() {
     } finally {
       setRefreshing(false);
     }
+  };
+
+  const handleContentClick = async (content) => {
+    setSelectedContent(content);
+    setShowContentModal(true);
+    setUserRating(null);
+    
+    // Load user's rating for this content
+    try {
+      setLoadingRating(true);
+      const response = await ratingsAPI.list({ userId: userId, contentId: content.id, limit: 1 });
+      if (response.success && response.ratings && response.ratings.length > 0) {
+        setUserRating(response.ratings[0]);
+      }
+    } catch (err) {
+      console.error('Failed to load user rating:', err);
+    } finally {
+      setLoadingRating(false);
+    }
+  };
+
+  const handleCloseModal = () => {
+    setShowContentModal(false);
+    setSelectedContent(null);
+    setUserRating(null);
   };
 
   if (loading) {
@@ -256,6 +302,304 @@ function DashboardPage() {
             ))}
           </div>
         </section>
+      )}
+
+      {/* My Content Section */}
+      <section className="dashboard-section">
+        <h2>📚 Мій контент</h2>
+        {loadingMyContent ? (
+          <div className="dashboard-loading">
+            <div className="spinner"></div>
+            <p>Завантаження контенту...</p>
+          </div>
+        ) : myContent.length === 0 ? (
+          <div className="empty-content" style={{ textAlign: 'center', padding: '2rem' }}>
+            <p>🎭 Ви ще не створили контент</p>
+            <p style={{ marginTop: '0.5rem', color: '#666' }}>Перейдіть на сторінку генерації, щоб створити свій перший контент</p>
+          </div>
+        ) : (
+          <div className="content-grid" style={{ 
+            display: 'grid', 
+            gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', 
+            gap: '1rem',
+            marginTop: '1rem'
+          }}>
+            {myContent.map((item) => (
+              <div 
+                key={item.id} 
+                className="content-item"
+                onClick={() => handleContentClick(item)}
+                style={{
+                  cursor: 'pointer',
+                  border: '1px solid #e0e0e0',
+                  borderRadius: '8px',
+                  overflow: 'hidden',
+                  transition: 'transform 0.2s, box-shadow 0.2s',
+                  backgroundColor: 'white'
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.transform = 'translateY(-4px)';
+                  e.currentTarget.style.boxShadow = '0 4px 12px rgba(0,0,0,0.15)';
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.transform = 'translateY(0)';
+                  e.currentTarget.style.boxShadow = 'none';
+                }}
+              >
+                {(item.type === 'image' || item.media_type === 'image') && (
+                  <img 
+                    src={item.url} 
+                    alt={item.original_prompt} 
+                    style={{ 
+                      width: '100%', 
+                      height: '200px', 
+                      objectFit: 'cover' 
+                    }} 
+                  />
+                )}
+                {(item.type === 'video' || item.media_type === 'video') && (
+                  <video 
+                    src={item.url} 
+                    style={{ 
+                      width: '100%', 
+                      height: '200px', 
+                      objectFit: 'cover' 
+                    }} 
+                  />
+                )}
+                {(item.type === 'audio' || item.media_type === 'audio') && (
+                  <div style={{ 
+                    width: '100%', 
+                    height: '200px', 
+                    display: 'flex', 
+                    alignItems: 'center', 
+                    justifyContent: 'center',
+                    backgroundColor: '#f5f5f5',
+                    fontSize: '3rem'
+                  }}>
+                    🎵
+                  </div>
+                )}
+                <div style={{ padding: '0.75rem' }}>
+                  <p style={{ 
+                    fontSize: '0.875rem', 
+                    margin: 0,
+                    overflow: 'hidden',
+                    textOverflow: 'ellipsis',
+                    display: '-webkit-box',
+                    WebkitLineClamp: 2,
+                    WebkitBoxOrient: 'vertical',
+                    color: '#333'
+                  }}>
+                    {item.original_prompt || item.prompt}
+                  </p>
+                  <div style={{ 
+                    display: 'flex', 
+                    justifyContent: 'space-between', 
+                    alignItems: 'center',
+                    marginTop: '0.5rem',
+                    fontSize: '0.75rem',
+                    color: '#666'
+                  }}>
+                    <span style={{ 
+                      padding: '0.25rem 0.5rem',
+                      backgroundColor: '#667eea',
+                      color: 'white',
+                      borderRadius: '4px'
+                    }}>
+                      {item.type || item.media_type}
+                    </span>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </section>
+
+      {/* Content Modal */}
+      {showContentModal && selectedContent && (
+        <div 
+          className="modal-overlay"
+          onClick={handleCloseModal}
+          style={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            backgroundColor: 'rgba(0, 0, 0, 0.7)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            zIndex: 1000,
+            padding: '1rem'
+          }}
+        >
+          <div 
+            className="modal-content"
+            onClick={(e) => e.stopPropagation()}
+            style={{
+              backgroundColor: 'white',
+              borderRadius: '12px',
+              maxWidth: '800px',
+              width: '100%',
+              maxHeight: '90vh',
+              overflow: 'auto',
+              position: 'relative'
+            }}
+          >
+            <button
+              onClick={handleCloseModal}
+              style={{
+                position: 'absolute',
+                top: '1rem',
+                right: '1rem',
+                background: 'rgba(0, 0, 0, 0.5)',
+                color: 'white',
+                border: 'none',
+                borderRadius: '50%',
+                width: '36px',
+                height: '36px',
+                fontSize: '1.5rem',
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                zIndex: 1
+              }}
+            >
+              ×
+            </button>
+            
+            <div style={{ padding: '2rem' }}>
+              {(selectedContent.type === 'image' || selectedContent.media_type === 'image') && (
+                <img 
+                  src={selectedContent.url} 
+                  alt={selectedContent.original_prompt}
+                  style={{ 
+                    width: '100%', 
+                    borderRadius: '8px',
+                    marginBottom: '1rem'
+                  }}
+                />
+              )}
+              {(selectedContent.type === 'video' || selectedContent.media_type === 'video') && (
+                <video 
+                  src={selectedContent.url} 
+                  controls
+                  style={{ 
+                    width: '100%', 
+                    borderRadius: '8px',
+                    marginBottom: '1rem'
+                  }}
+                />
+              )}
+              {(selectedContent.type === 'audio' || selectedContent.media_type === 'audio') && (
+                <div style={{ marginBottom: '1rem' }}>
+                  <div style={{ 
+                    padding: '2rem',
+                    backgroundColor: '#f5f5f5',
+                    borderRadius: '8px',
+                    textAlign: 'center',
+                    fontSize: '4rem',
+                    marginBottom: '1rem'
+                  }}>
+                    🎵
+                  </div>
+                  <audio src={selectedContent.url} controls style={{ width: '100%' }} />
+                </div>
+              )}
+              
+              <h3 style={{ marginTop: '1rem', marginBottom: '0.5rem' }}>Prompt</h3>
+              <p style={{ color: '#666', lineHeight: '1.6' }}>
+                {selectedContent.original_prompt || selectedContent.prompt}
+              </p>
+              
+              {selectedContent.enhanced_prompt && (
+                <>
+                  <h3 style={{ marginTop: '1rem', marginBottom: '0.5rem' }}>Enhanced Prompt</h3>
+                  <p style={{ color: '#666', lineHeight: '1.6', fontSize: '0.9rem' }}>
+                    {selectedContent.enhanced_prompt}
+                  </p>
+                </>
+              )}
+              
+              {/* User's Rating */}
+              {loadingRating ? (
+                <div style={{ 
+                  marginTop: '1rem', 
+                  padding: '1rem', 
+                  backgroundColor: '#f0f0f0',
+                  borderRadius: '8px',
+                  textAlign: 'center'
+                }}>
+                  <p style={{ margin: 0, color: '#666' }}>Завантаження вашого рейтингу...</p>
+                </div>
+              ) : userRating ? (
+                <div style={{ 
+                  marginTop: '1rem', 
+                  padding: '1rem', 
+                  backgroundColor: userRating.direction === 'right' || userRating.direction === 'up' ? '#e8f5e9' : '#ffebee',
+                  borderRadius: '8px',
+                  border: `2px solid ${userRating.direction === 'right' || userRating.direction === 'up' ? '#4caf50' : '#f44336'}`
+                }}>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem' }}>
+                    <span style={{ fontSize: '1.5rem' }}>
+                      {userRating.direction === 'right' && '👍'}
+                      {userRating.direction === 'left' && '👎'}
+                      {userRating.direction === 'up' && '⭐'}
+                      {userRating.direction === 'down' && '🔄'}
+                    </span>
+                    <strong style={{ color: '#333' }}>
+                      Ваша оцінка: {' '}
+                      {userRating.direction === 'right' && 'Лайк'}
+                      {userRating.direction === 'left' && 'Дизлайк'}
+                      {userRating.direction === 'up' && 'Суперлайк'}
+                      {userRating.direction === 'down' && 'Reroll'}
+                    </strong>
+                  </div>
+                  {userRating.comment && (
+                    <p style={{ 
+                      marginTop: '0.5rem', 
+                      marginBottom: 0,
+                      fontSize: '0.875rem', 
+                      color: '#666',
+                      fontStyle: 'italic'
+                    }}>
+                      💬 "{userRating.comment}"
+                    </p>
+                  )}
+                </div>
+              ) : (
+                <div style={{ 
+                  marginTop: '1rem', 
+                  padding: '1rem', 
+                  backgroundColor: '#fff3e0',
+                  borderRadius: '8px',
+                  border: '2px dashed #ff9800',
+                  textAlign: 'center'
+                }}>
+                  <p style={{ margin: 0, color: '#666' }}>
+                    ℹ️ Ви ще не оцінили цей контент
+                  </p>
+                </div>
+              )}
+            
+              
+              {selectedContent.created_at && (
+                <p style={{ 
+                  marginTop: '1rem', 
+                  fontSize: '0.875rem', 
+                  color: '#999',
+                  textAlign: 'center'
+                }}>
+                  Created: {new Date(selectedContent.created_at).toLocaleString()}
+                </p>
+              )}
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );

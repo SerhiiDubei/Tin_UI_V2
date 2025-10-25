@@ -174,12 +174,17 @@ router.get('/stats', async (req, res) => {
     };
     
     stats.likeRate = stats.total > 0 
-      ? (stats.likes + stats.superlikes) / stats.total 
+      ? ((stats.likes + stats.superlikes) / stats.total) * 100
       : 0;
+    
+    // Also add individual counts for easier use
+    stats.totalRatings = stats.total;
+    stats.totalLikes = stats.likes + stats.superlikes;
+    stats.totalDislikes = stats.dislikes;
     
     res.json({
       success: true,
-      stats: stats
+      data: stats
     });
   } catch (error) {
     console.error('Get rating stats error:', error);

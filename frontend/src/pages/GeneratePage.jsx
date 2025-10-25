@@ -16,8 +16,6 @@ function GeneratePage() {
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState(null);
   const [error, setError] = useState(null);
-  const [myContent, setMyContent] = useState([]);
-  const [loadingContent, setLoadingContent] = useState(true);
   const [batchProgress, setBatchProgress] = useState({ current: 0, total: 0 });
   const { user } = useAuth();
   const navigate = useNavigate();
@@ -31,24 +29,6 @@ function GeneratePage() {
       setModelKey(defaultModel);
     }
   }, [contentType]);
-
-  useEffect(() => {
-    loadMyContent();
-  }, []);
-
-  const loadMyContent = async () => {
-    try {
-      setLoadingContent(true);
-      const response = await contentAPI.list({ userId: user.id, limit: 10 });
-      if (response.success && response.content) {
-        setMyContent(response.content);
-      }
-    } catch (err) {
-      console.error('Failed to load content:', err);
-    } finally {
-      setLoadingContent(false);
-    }
-  };
 
   const handleGenerate = async () => {
     if (!prompt.trim()) {
@@ -74,7 +54,6 @@ function GeneratePage() {
       if (response.success) {
         setResult(response);
         setPrompt('');
-        await loadMyContent();
       } else {
         throw new Error('Генерація не вдалася');
       }
@@ -234,40 +213,6 @@ function GeneratePage() {
                   Згенерувати ще
                 </Button>
               </div>
-            </div>
-          )}
-        </Card>
-
-        {/* My Content */}
-        <Card title="📚 Мій контент" className="my-content-card">
-          {loadingContent ? (
-            <Loading text="Завантаження..." />
-          ) : myContent.length === 0 ? (
-            <div className="empty-content">
-              <p>🎭 Ви ще не створили контент</p>
-            </div>
-          ) : (
-            <div className="content-grid">
-              {myContent.map((item) => (
-                <div key={item.id} className="content-item">
-                  {item.type === 'image' && (
-                    <img src={item.url} alt={item.original_prompt} className="content-thumbnail" />
-                  )}
-                  {item.type === 'video' && (
-                    <video src={item.url} className="content-thumbnail" controls />
-                  )}
-                  {item.type === 'audio' && (
-                    <div className="audio-thumbnail">
-                      <span>🎵</span>
-                      <audio src={item.url} controls style={{width: '100%', marginTop: '10px'}} />
-                    </div>
-                  )}
-                  <div className="content-item-info">
-                    <p className="content-prompt">{item.original_prompt}</p>
-                    <p className="content-type-badge">{item.type}</p>
-                  </div>
-                </div>
-              ))}
             </div>
           )}
         </Card>

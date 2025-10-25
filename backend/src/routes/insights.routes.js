@@ -20,7 +20,7 @@ router.get('/user/:userId', async (req, res) => {
     
     res.json({
       success: true,
-      insights: insights
+      data: insights
     });
   } catch (error) {
     console.error('Get user insights error:', error);
@@ -116,7 +116,7 @@ router.get('/dashboard', async (req, res) => {
     };
     
     stats.likeRate = stats.totalRatings > 0
-      ? (stats.likes + stats.superlikes) / stats.totalRatings
+      ? ((stats.likes + stats.superlikes) / stats.totalRatings) * 100
       : 0;
     
     // Get top content
@@ -136,7 +136,10 @@ router.get('/dashboard', async (req, res) => {
     
     res.json({
       success: true,
-      dashboard: {
+      data: {
+        totalContent: stats.totalContent,
+        totalRatings: stats.totalRatings,
+        likeRate: stats.likeRate,
         stats,
         topContent: topContent || [],
         templates: templates || []

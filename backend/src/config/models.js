@@ -13,8 +13,8 @@ export const MODELS_CONFIG = {
       version: 'latest',
       isDefault: true,
       params: {
-        width: 1024,
-        height: 1024,
+        width: 2048,
+        height: 2048,
         num_inference_steps: 4
       }
     },
