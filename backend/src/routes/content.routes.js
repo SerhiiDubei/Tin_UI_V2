@@ -59,39 +59,60 @@ router.post('/generate', async (req, res) => {
       }
     };
     
-    // Enhance prompt with OpenAI
-    const { enhancedPrompt } = await enhancePrompt(prompt, context);
-    
     // Detect category automatically
     const { category } = await detectCategory(prompt, contentType);
     console.log(`📂 Detected category: ${category}`);
+    
+    // Add category to context
+    context.category = category;
     
     // Determine model to use
     const selectedModel = modelKey || getDefaultModel(contentType);
     
     // Batch or single generation
     if (count > 1) {
-      // Batch generation
-      const batchResult = await batchGenerate(
-        enhancedPrompt, 
-        contentType, 
-        selectedModel, 
-        count,
-        { ...template?.model_params, ...customParams }
-      );
+      console.log(`🔄 Batch generation: ${count} items with UNIQUE prompts`);
       
-      if (!batchResult.success) {
-        return res.status(500).json({ error: 'Batch generation failed', details: batchResult });
+      // Generate UNIQUE enhanced prompt for EACH item
+      const enhancedPrompts = [];
+      for (let i = 0; i < count; i++) {
+        const variantContext = { 
+          ...context, 
+          variationIndex: i 
+        };
+        const { enhancedPrompt } = await enhancePrompt(prompt, variantContext);
+        enhancedPrompts.push(enhancedPrompt);
+        console.log(`  ✓ Prompt ${i + 1}/${count}: ${enhancedPrompt.substring(0, 80)}...`);
       }
       
-      // Save all successful generations to database
-      const contentToInsert = batchResult.results
-        .filter(r => r.success)
-        .map(r => ({
+      // Batch generation with different prompts
+      const promises = [];
+      for (let i = 0; i < count; i++) {
+        promises.push(
+          generateContent(
+            enhancedPrompts[i], 
+            contentType, 
+            selectedModel,
+            { ...template?.model_params, ...customParams }
+          )
+        );
+      }
+      
+      const results = await Promise.all(promises);
+      const successful = results.filter(r => r.success);
+      const failed = results.filter(r => !r.success);
+      
+      if (failed.length === count) {
+        return res.status(500).json({ error: 'All generations failed', details: { failed: failed.length } });
+      }
+      
+      // Save all successful generations to database with their unique prompts
+      const contentToInsert = results
+        .map((r, idx) => r.success ? {
           url: r.url,
           type: contentType,
           original_prompt: prompt,
-          enhanced_prompt: enhancedPrompt,
+          enhanced_prompt: enhancedPrompts[idx],
           model: r.model,
           template_id: templateId || null,
           user_id: userId || null,
@@ -100,9 +121,11 @@ router.post('/generate', async (req, res) => {
             ...customParams, 
             modelKey: selectedModel,
             contentType: contentType,
-            category: category
+            category: category,
+            variationIndex: idx
           }
-        }));
+        } : null)
+        .filter(Boolean);
       
       const { data: savedContent, error: insertError } = await supabase
         .from('content')
@@ -115,12 +138,15 @@ router.post('/generate', async (req, res) => {
         success: true,
         batch: true,
         total: count,
-        successful: batchResult.successful,
-        failed: batchResult.failed,
+        successful: successful.length,
+        failed: failed.length,
         content: savedContent
       });
     } else {
       // Single generation
+      const { enhancedPrompt } = await enhancePrompt(prompt, context);
+      console.log(`✨ Enhanced prompt: ${enhancedPrompt}`);
+      
       const result = await generateContent(
         enhancedPrompt, 
         contentType, 
