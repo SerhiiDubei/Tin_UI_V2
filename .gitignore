@@ -39,5 +39,5 @@ lerna-debug.log*
 Thumbs.db
 
 # Build
-frontend/build/
+# frontend/build/ - Included for GitHub Pages
 backend/dist/
