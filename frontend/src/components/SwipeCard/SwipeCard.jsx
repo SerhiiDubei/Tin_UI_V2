@@ -64,6 +64,8 @@ const SwipeCard = ({ content, onSwipe }) => {
   };
 
   const getSwipeHint = () => {
+    if (!position) return null;
+    
     const threshold = 50;
     const { x, y } = position;
 

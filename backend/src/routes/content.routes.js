@@ -113,9 +113,11 @@ router.post('/generate', async (req, res) => {
           type: contentType,
           original_prompt: prompt,
           enhanced_prompt: enhancedPrompts[idx],
+          final_prompt: enhancedPrompts[idx],
           model: r.model,
           template_id: templateId || null,
           user_id: userId || null,
+          parent_id: null,
           meta_json: { 
             ...template?.model_params, 
             ...customParams, 
@@ -166,9 +168,11 @@ router.post('/generate', async (req, res) => {
           type: contentType,
           original_prompt: prompt,
           enhanced_prompt: enhancedPrompt,
+          final_prompt: enhancedPrompt,
           model: result.model,
           template_id: templateId || null,
           user_id: userId || null,
+          parent_id: null,
           meta_json: { 
             ...template?.model_params, 
             ...customParams, 
