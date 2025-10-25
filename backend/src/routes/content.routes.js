@@ -1,7 +1,7 @@
 import express from 'express';
 import supabase from '../db/supabase.js';
 import { generateContent, batchGenerate } from '../services/replicate.service.js';
-import { enhancePrompt } from '../services/openai.service.js';
+import { enhancePrompt, detectCategory } from '../services/openai.service.js';
 import { getUserInsights } from '../services/insights.service.js';
 import { getDefaultModel } from '../config/models.js';
 
@@ -62,6 +62,10 @@ router.post('/generate', async (req, res) => {
     // Enhance prompt with OpenAI
     const { enhancedPrompt } = await enhancePrompt(prompt, context);
     
+    // Detect category automatically
+    const { category } = await detectCategory(prompt, contentType);
+    console.log(`📂 Detected category: ${category}`);
+    
     // Determine model to use
     const selectedModel = modelKey || getDefaultModel(contentType);
     
@@ -95,7 +99,8 @@ router.post('/generate', async (req, res) => {
             ...template?.model_params, 
             ...customParams, 
             modelKey: selectedModel,
-            contentType: contentType 
+            contentType: contentType,
+            category: category
           }
         }));
       
@@ -142,7 +147,8 @@ router.post('/generate', async (req, res) => {
             ...template?.model_params, 
             ...customParams, 
             modelKey: selectedModel,
-            contentType: contentType 
+            contentType: contentType,
+            category: category
           }
         })
         .select()

@@ -143,14 +143,14 @@ function GeneratePage() {
               <input
                 type="number"
                 min="1"
-                max="10"
+                max="1000"
                 value={count}
-                onChange={(e) => setCount(Math.min(10, Math.max(1, parseInt(e.target.value) || 1)))}
+                onChange={(e) => setCount(Math.min(1000, Math.max(1, parseInt(e.target.value) || 1)))}
                 className="count-input"
                 disabled={loading}
               />
               <div className="count-buttons">
-                {[1, 2, 3, 5].map(num => (
+                {[1, 5, 10, 50, 100].map(num => (
                   <button
                     key={num}
                     className={`count-btn ${count === num ? 'active' : ''}`}
@@ -164,7 +164,9 @@ function GeneratePage() {
             </div>
             <p className="count-hint">
               💡 Генерація {count} {count === 1 ? 'елемента' : count < 5 ? 'елементів' : 'елементів'}
-              {count > 1 && ` (~${count * 60} секунд)`}
+              {count > 1 && count <= 10 && ` (~${count * 60} секунд)`}
+              {count > 10 && count <= 100 && ` (~${Math.ceil(count / 10)} хвилин)`}
+              {count > 100 && ` (~${Math.ceil(count / 10)} хвилин, генерація буде паралельною)`}
             </p>
           </div>
 
