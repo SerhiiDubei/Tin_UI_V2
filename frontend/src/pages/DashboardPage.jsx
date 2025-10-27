@@ -41,6 +41,13 @@ function DashboardPage() {
       setDashboardData(dashboardRes.data);
       setStats(statsRes.data);
       setUserInsights(userInsightsRes.data);
+      
+      // Debug logging
+      console.log('📊 Dashboard data loaded:', {
+        userInsights: userInsightsRes.data,
+        likes: userInsightsRes.data?.likes,
+        dislikes: userInsightsRes.data?.dislikes
+      });
 
       // Load top content
       if (dashboardRes.data?.topContent) {
@@ -197,25 +204,37 @@ function DashboardPage() {
             <div className="insight-category">
               <h3>👍 You Like</h3>
               <div className="keyword-list">
-                {userInsights.likes?.slice(0, 10).map((keyword, idx) => (
-                  <span key={idx} className="keyword positive">{keyword}</span>
-                )) || <p className="empty-text">No likes yet</p>}
+                {userInsights.likes && userInsights.likes.length > 0 ? (
+                  userInsights.likes.slice(0, 10).map((keyword, idx) => (
+                    <span key={idx} className="keyword positive">{keyword}</span>
+                  ))
+                ) : (
+                  <p className="empty-text">No likes yet - start swiping and adding comments!</p>
+                )}
               </div>
             </div>
             <div className="insight-category">
               <h3>👎 You Dislike</h3>
               <div className="keyword-list">
-                {userInsights.dislikes?.slice(0, 10).map((keyword, idx) => (
-                  <span key={idx} className="keyword negative">{keyword}</span>
-                )) || <p className="empty-text">No dislikes yet</p>}
+                {userInsights.dislikes && userInsights.dislikes.length > 0 ? (
+                  userInsights.dislikes.slice(0, 10).map((keyword, idx) => (
+                    <span key={idx} className="keyword negative">{keyword}</span>
+                  ))
+                ) : (
+                  <p className="empty-text">No dislikes yet - add comments when you swipe left</p>
+                )}
               </div>
             </div>
             <div className="insight-category">
               <h3>💭 Suggestions</h3>
               <div className="keyword-list">
-                {userInsights.suggestions?.slice(0, 10).map((keyword, idx) => (
-                  <span key={idx} className="keyword neutral">{keyword}</span>
-                )) || <p className="empty-text">No suggestions yet</p>}
+                {userInsights.suggestions && userInsights.suggestions.length > 0 ? (
+                  userInsights.suggestions.slice(0, 10).map((keyword, idx) => (
+                    <span key={idx} className="keyword neutral">{keyword}</span>
+                  ))
+                ) : (
+                  <p className="empty-text">No suggestions yet - AI will analyze your preferences</p>
+                )}
               </div>
             </div>
           </div>

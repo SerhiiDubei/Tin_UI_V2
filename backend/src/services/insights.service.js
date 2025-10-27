@@ -33,6 +33,8 @@ export async function getUserInsights(userId) {
  */
 export async function updateUserInsights(userId) {
   try {
+    console.log(`🔄 Updating insights for user: ${userId}`);
+    
     // Get recent ratings (last 50)
     const { data: ratings, error: ratingsError } = await supabase
       .from('ratings')
@@ -44,8 +46,11 @@ export async function updateUserInsights(userId) {
     if (ratingsError) throw ratingsError;
     
     if (!ratings || ratings.length === 0) {
+      console.log('⚠️ No ratings found for user');
       return { success: false, message: 'No ratings found' };
     }
+    
+    console.log(`📊 Found ${ratings.length} ratings`);
     
     // Separate by direction
     const likes = ratings.filter(r => r.direction === 'right' || r.direction === 'up');
@@ -55,12 +60,22 @@ export async function updateUserInsights(userId) {
     const likeComments = likes.map(r => r.comment).filter(c => c);
     const dislikeComments = dislikes.map(r => r.comment).filter(c => c);
     
+    console.log(`💬 Analyzing ${likeComments.length} like comments and ${dislikeComments.length} dislike comments`);
+    
     const likeAnalysis = await analyzeComments(likeComments);
     const dislikeAnalysis = await analyzeComments(dislikeComments);
     
     // Count keywords
     const likesKeywords = countKeywords(likeAnalysis.analysis.likes);
     const dislikesKeywords = countKeywords(dislikeAnalysis.analysis.dislikes);
+    
+    console.log(`✅ Keywords - Likes: ${likesKeywords.length}, Dislikes: ${dislikesKeywords.length}`);
+    
+    // Combine suggestions from both analyses
+    const allSuggestions = [
+      ...(likeAnalysis.analysis.suggestions || []),
+      ...(dislikeAnalysis.analysis.suggestions || [])
+    ];
     
     // Calculate stats
     const totalSwipes = ratings.length;
@@ -75,6 +90,9 @@ export async function updateUserInsights(userId) {
         user_id: userId,
         likes_json: likesKeywords,
         dislikes_json: dislikesKeywords,
+        preferences_json: {
+          suggestions: allSuggestions
+        },
         total_swipes: totalSwipes,
         total_likes: totalLikes,
         total_dislikes: totalDislikes,
@@ -85,6 +103,12 @@ export async function updateUserInsights(userId) {
       .single();
     
     if (error) throw error;
+    
+    console.log('✅ Insights updated successfully:', {
+      likes: likesKeywords.slice(0, 3),
+      dislikes: dislikesKeywords.slice(0, 3),
+      suggestions: allSuggestions.slice(0, 3)
+    });
     
     return {
       success: true,

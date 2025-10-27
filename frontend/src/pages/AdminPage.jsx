@@ -10,6 +10,8 @@ function AdminPage() {
   const [allRatings, setAllRatings] = useState([]);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('users'); // users, content, ratings
+  const [migrating, setMigrating] = useState(false);
+  const [migrationResult, setMigrationResult] = useState(null);
   const { user } = useAuth();
 
   useEffect(() => {
@@ -54,6 +56,47 @@ function AdminPage() {
     };
   };
 
+  const handleMigrateUrls = async () => {
+    if (!window.confirm('Migrate all existing Replicate URLs to permanent Supabase Storage?\n\nThis may take several minutes depending on the amount of content.')) {
+      return;
+    }
+
+    try {
+      setMigrating(true);
+      setMigrationResult(null);
+      const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000/api';
+
+      const response = await fetch(`${API_URL}/admin/migrate-urls`, {
+        method: 'POST'
+      });
+
+      const result = await response.json();
+
+      if (result.success) {
+        setMigrationResult({
+          success: true,
+          message: `Migration completed! ${result.data.migrated} URLs migrated successfully.`,
+          data: result.data
+        });
+        // Reload content to show new URLs
+        await loadAdminData();
+      } else {
+        setMigrationResult({
+          success: false,
+          message: `Migration failed: ${result.error}`
+        });
+      }
+    } catch (err) {
+      console.error('Migration error:', err);
+      setMigrationResult({
+        success: false,
+        message: `Migration failed: ${err.message}`
+      });
+    } finally {
+      setMigrating(false);
+    }
+  };
+
   if (loading) {
     return (
       <div className="admin-page">
@@ -69,6 +112,42 @@ function AdminPage() {
           <h1>👑 Admin Dashboard</h1>
           <p>Manage users and monitor system activity</p>
         </div>
+
+        {/* System Maintenance */}
+        <Card title="🔧 System Maintenance" className="maintenance-card">
+          <div className="maintenance-section">
+            <div className="maintenance-info">
+              <h3>📦 URL Migration (One-Time Only)</h3>
+              <p>
+                <strong>⚠️ Only for OLD content generated before 27.10.2025!</strong><br/>
+                New photos automatically save correctly. This migration is only needed once 
+                to preserve old photos (if they're still active).
+              </p>
+              <p style={{ fontSize: '0.9rem', color: '#666', marginTop: '0.5rem' }}>
+                ✅ All new content automatically uses permanent storage - no action needed!
+              </p>
+              {migrationResult && (
+                <div className={`migration-result ${migrationResult.success ? 'success' : 'error'}`}>
+                  <p>{migrationResult.message}</p>
+                  {migrationResult.data && (
+                    <div className="migration-stats">
+                      <span>Total: {migrationResult.data.total}</span>
+                      <span>Migrated: {migrationResult.data.migrated}</span>
+                      <span>Failed: {migrationResult.data.failed}</span>
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+            <button
+              className="btn-primary migrate-btn"
+              onClick={handleMigrateUrls}
+              disabled={migrating}
+            >
+              {migrating ? '🔄 Migrating...' : '📦 Migrate URLs to Permanent Storage'}
+            </button>
+          </div>
+        </Card>
 
         {/* Stats Overview */}
         <div className="stats-overview">

@@ -31,18 +31,45 @@ router.post('/', async (req, res) => {
       });
     }
     
-    // Check if already rated
+    // Check if already rated (but allow re-rating skipped items)
     const { data: existing } = await supabase
       .from('ratings')
-      .select('id')
+      .select('id, direction')
       .eq('user_id', userId)
       .eq('content_id', contentId)
       .single();
     
     if (existing) {
-      return res.status(409).json({ 
-        error: 'Content already rated by this user' 
-      });
+      // If was skipped, allow re-rating (update instead of error)
+      if (existing.direction === 'down') {
+        console.log(`🔄 Updating skipped item to ${direction}`);
+        const { data: updated, error: updateError } = await supabase
+          .from('ratings')
+          .update({
+            direction: direction,
+            comment: comment,
+            latency_ms: latencyMs,
+            meta_json: {
+              updated_from_skip: true,
+              timestamp: new Date().toISOString()
+            }
+          })
+          .eq('id', existing.id)
+          .select()
+          .single();
+        
+        if (updateError) throw updateError;
+        
+        return res.json({
+          success: true,
+          rating: updated,
+          updated: true
+        });
+      } else {
+        return res.status(409).json({ 
+          error: 'Content already rated by this user' 
+        });
+      }
     }
     
     // Get content info for metadata
@@ -181,6 +208,30 @@ router.get('/stats', async (req, res) => {
     stats.totalRatings = stats.total;
     stats.totalLikes = stats.likes + stats.superlikes;
     stats.totalDislikes = stats.dislikes;
+    
+    // Calculate unrated content if userId provided
+    if (userId) {
+      // Get total content count
+      const { count: totalContent } = await supabase
+        .from('content')
+        .select('*', { count: 'exact', head: true });
+      
+      // Get rated content count (excluding skipped)
+      const { count: ratedCount } = await supabase
+        .from('ratings')
+        .select('*', { count: 'exact', head: true })
+        .eq('user_id', userId)
+        .neq('direction', 'down'); // Exclude skipped
+      
+      stats.totalContent = totalContent || 0;
+      stats.unrated = (totalContent || 0) - (ratedCount || 0);
+      
+      console.log(`📊 Stats for user ${userId}:`, {
+        totalContent,
+        ratedCount,
+        unrated: stats.unrated
+      });
+    }
     
     res.json({
       success: true,

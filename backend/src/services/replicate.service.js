@@ -1,6 +1,7 @@
 import Replicate from 'replicate';
 import config from '../config/index.js';
 import { getModelConfig } from '../config/models.js';
+import { uploadFromUrl } from './storage.service.js';
 
 const replicate = new Replicate({
   auth: config.replicate.apiToken
@@ -8,8 +9,9 @@ const replicate = new Replicate({
 
 /**
  * Generate content using Replicate (unified function)
+ * Now with permanent storage - uploads files to Supabase Storage
  */
-export async function generateContent(prompt, contentType, modelKey, customParams = {}) {
+export async function generateContent(prompt, contentType, modelKey, customParams = {}, userId = 'anonymous') {
   try {
     const modelConfig = getModelConfig(contentType, modelKey);
     
@@ -42,21 +44,43 @@ export async function generateContent(prompt, contentType, modelKey, customParam
 
     console.log('Generation output:', output);
 
-    // Extract URL from output
-    let url;
+    // Extract temporary URL from output
+    let temporaryUrl;
     if (Array.isArray(output)) {
-      url = output[0];
+      temporaryUrl = output[0];
     } else if (typeof output === 'string') {
-      url = output;
+      temporaryUrl = output;
     } else if (output && output.url) {
-      url = output.url;
+      temporaryUrl = output.url;
     } else {
-      url = output;
+      temporaryUrl = output;
     }
+
+    console.log(`📥 Temporary URL from Replicate: ${temporaryUrl}`);
+
+    // Upload to permanent storage (Supabase Storage)
+    console.log('📦 Uploading to permanent storage...');
+    const uploadResult = await uploadFromUrl(temporaryUrl, contentType, userId);
+
+    if (!uploadResult.success) {
+      console.error('⚠️ Failed to upload to permanent storage, using temporary URL');
+      // Fallback to temporary URL if upload fails
+      return {
+        success: true,
+        url: temporaryUrl,
+        permanentUrl: false,
+        model: modelConfig.name,
+        modelKey: modelKey,
+        contentType: contentType
+      };
+    }
+
+    console.log(`✅ Uploaded to permanent storage: ${uploadResult.url}`);
 
     return {
       success: true,
-      url: url,
+      url: uploadResult.url,
+      permanentUrl: true,
       model: modelConfig.name,
       modelKey: modelKey,
       contentType: contentType
@@ -75,37 +99,37 @@ export async function generateContent(prompt, contentType, modelKey, customParam
 /**
  * Generate image using Replicate (backward compatibility)
  */
-export async function generateImage(prompt, modelParams = {}) {
+export async function generateImage(prompt, modelParams = {}, userId = 'anonymous') {
   const modelKey = modelParams.modelKey || 'seedream-4';
-  return generateContent(prompt, 'image', modelKey, modelParams);
+  return generateContent(prompt, 'image', modelKey, modelParams, userId);
 }
 
 /**
  * Generate video using Replicate (backward compatibility)
  */
-export async function generateVideo(prompt, modelParams = {}) {
+export async function generateVideo(prompt, modelParams = {}, userId = 'anonymous') {
   const modelKey = modelParams.modelKey || 'ltx-video';
-  return generateContent(prompt, 'video', modelKey, modelParams);
+  return generateContent(prompt, 'video', modelKey, modelParams, userId);
 }
 
 /**
  * Generate audio using Replicate
  */
-export async function generateAudio(prompt, modelParams = {}) {
+export async function generateAudio(prompt, modelParams = {}, userId = 'anonymous') {
   const modelKey = modelParams.modelKey || 'lyria-2';
-  return generateContent(prompt, 'audio', modelKey, modelParams);
+  return generateContent(prompt, 'audio', modelKey, modelParams, userId);
 }
 
 /**
  * Batch generation - generate multiple items
  */
-export async function batchGenerate(prompt, contentType, modelKey, count = 1, customParams = {}) {
+export async function batchGenerate(prompt, contentType, modelKey, count = 1, customParams = {}, userId = 'anonymous') {
   try {
     console.log(`Batch generating ${count} ${contentType} items...`);
     
     const promises = [];
     for (let i = 0; i < count; i++) {
-      promises.push(generateContent(prompt, contentType, modelKey, customParams));
+      promises.push(generateContent(prompt, contentType, modelKey, customParams, userId));
     }
 
     const results = await Promise.all(promises);

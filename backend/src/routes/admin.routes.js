@@ -1,5 +1,6 @@
 import express from 'express';
 import { supabase } from '../db/supabase.js';
+import { migrateExistingUrls } from '../services/storage.service.js';
 
 const router = express.Router();
 
@@ -46,6 +47,39 @@ router.get('/stats', async (req, res, next) => {
       }
     });
   } catch (error) {
+    next(error);
+  }
+});
+
+/**
+ * POST /api/admin/migrate-urls
+ * Migrate existing temporary Replicate URLs to permanent Supabase Storage
+ * This fixes the issue where URLs expire after 24-48 hours
+ */
+router.post('/migrate-urls', async (req, res, next) => {
+  try {
+    console.log('🔄 Starting URL migration...');
+    
+    const result = await migrateExistingUrls();
+    
+    if (!result.success) {
+      return res.status(500).json({
+        success: false,
+        error: result.error
+      });
+    }
+    
+    res.json({
+      success: true,
+      message: 'URL migration completed',
+      data: {
+        total: result.total,
+        migrated: result.migrated,
+        failed: result.failed
+      }
+    });
+  } catch (error) {
+    console.error('Migration error:', error);
     next(error);
   }
 });

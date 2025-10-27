@@ -93,7 +93,8 @@ router.post('/generate', async (req, res) => {
             enhancedPrompts[i], 
             contentType, 
             selectedModel,
-            { ...template?.model_params, ...customParams }
+            { ...template?.model_params, ...customParams },
+            userId
           )
         );
       }
@@ -107,6 +108,7 @@ router.post('/generate', async (req, res) => {
       }
       
       // Save all successful generations to database with their unique prompts
+      // First one is the parent, others are variations
       const contentToInsert = results
         .map((r, idx) => r.success ? {
           url: r.url,
@@ -117,24 +119,50 @@ router.post('/generate', async (req, res) => {
           model: r.model,
           template_id: templateId || null,
           user_id: userId || null,
-          parent_id: null,
+          parent_id: null, // Will be set after first insert
           meta_json: { 
             ...template?.model_params, 
             ...customParams, 
             modelKey: selectedModel,
             contentType: contentType,
             category: category,
-            variationIndex: idx
+            variationIndex: idx,
+            isVariation: idx > 0 // Mark variations
           }
         } : null)
         .filter(Boolean);
       
-      const { data: savedContent, error: insertError } = await supabase
-        .from('content')
-        .insert(contentToInsert)
-        .select();
+      // Insert first (parent) item
+      if (contentToInsert.length === 0) {
+        return res.status(500).json({ error: 'All generations failed' });
+      }
       
-      if (insertError) throw insertError;
+      const { data: firstContent, error: firstError } = await supabase
+        .from('content')
+        .insert([contentToInsert[0]])
+        .select()
+        .single();
+      
+      if (firstError) throw firstError;
+      
+      // Insert remaining items as variations (with parent_id)
+      let savedVariations = [];
+      if (contentToInsert.length > 1) {
+        const variations = contentToInsert.slice(1).map(item => ({
+          ...item,
+          parent_id: firstContent.id // Link to parent
+        }));
+        
+        const { data: variationsData, error: variationsError } = await supabase
+          .from('content')
+          .insert(variations)
+          .select();
+        
+        if (variationsError) throw variationsError;
+        savedVariations = variationsData || [];
+      }
+      
+      const savedContent = [firstContent, ...savedVariations];
       
       return res.json({
         success: true,
@@ -142,7 +170,8 @@ router.post('/generate', async (req, res) => {
         total: count,
         successful: successful.length,
         failed: failed.length,
-        content: savedContent
+        content: savedContent,
+        parentId: firstContent.id // ID of parent content
       });
     } else {
       // Single generation
@@ -153,7 +182,8 @@ router.post('/generate', async (req, res) => {
         enhancedPrompt, 
         contentType, 
         selectedModel,
-        { ...template?.model_params, ...customParams }
+        { ...template?.model_params, ...customParams },
+        userId
       );
       
       if (!result.success) {
@@ -286,11 +316,15 @@ router.get('/random/next', async (req, res) => {
     }
     
     // Exclude user's own ratings if userId provided
+    // BUT include skipped items (direction = 'down') so they can be reviewed again
     if (userId) {
       const { data: ratedIds } = await supabase
         .from('ratings')
-        .select('content_id')
-        .eq('user_id', userId);
+        .select('content_id, direction')
+        .eq('user_id', userId)
+        .neq('direction', 'down'); // Don't exclude skipped items
+      
+      console.log(`🔍 User ${userId} has ${ratedIds?.length || 0} rated items (excluding skipped)`);
       
       if (ratedIds && ratedIds.length > 0) {
         const ids = ratedIds.map(r => r.content_id);
@@ -302,6 +336,8 @@ router.get('/random/next', async (req, res) => {
     const { data, error } = await query
       .order('created_at', { ascending: false })
       .limit(10);
+    
+    console.log(`📊 Found ${data?.length || 0} available content items`);
     
     if (error) throw error;
     

@@ -18,9 +18,30 @@ router.get('/user/:userId', async (req, res) => {
       return res.status(404).json({ error: 'User insights not found' });
     }
     
+    // Format data for frontend
+    const formattedInsights = {
+      userId: insights.user_id,
+      // Convert [{keyword: "nice", count: 1}] to ["nice", "girl", ...]
+      likes: insights.likes_json?.map(item => item.keyword || item) || [],
+      dislikes: insights.dislikes_json?.map(item => item.keyword || item) || [],
+      suggestions: insights.preferences_json?.suggestions || [],
+      totalSwipes: insights.total_swipes || 0,
+      totalLikes: insights.total_likes || 0,
+      totalDislikes: insights.total_dislikes || 0,
+      totalSuperlikes: insights.total_superlikes || 0,
+      updatedAt: insights.updated_at,
+      lastActivity: insights.last_activity_at
+    };
+    
+    console.log('📊 User insights formatted:', {
+      likes: formattedInsights.likes,
+      dislikes: formattedInsights.dislikes,
+      suggestions: formattedInsights.suggestions
+    });
+    
     res.json({
       success: true,
-      data: insights
+      data: formattedInsights
     });
   } catch (error) {
     console.error('Get user insights error:', error);
@@ -94,26 +115,28 @@ router.post('/template/:templateId/update', async (req, res) => {
  */
 router.get('/dashboard', async (req, res) => {
   try {
-    // Get overall stats
-    const { data: contentCount } = await supabase
+    // Get overall stats - using count properly
+    const { count: totalContentCount } = await supabase
       .from('content')
-      .select('id', { count: 'exact', head: true });
+      .select('*', { count: 'exact', head: true });
     
-    const { data: ratingsCount } = await supabase
+    const { count: totalRatingsCount } = await supabase
       .from('ratings')
-      .select('id', { count: 'exact', head: true });
+      .select('*', { count: 'exact', head: true });
     
     const { data: ratings } = await supabase
       .from('ratings')
       .select('direction');
     
     const stats = {
-      totalContent: contentCount?.length || 0,
-      totalRatings: ratingsCount?.length || 0,
+      totalContent: totalContentCount || 0,
+      totalRatings: totalRatingsCount || 0,
       likes: ratings?.filter(r => r.direction === 'right').length || 0,
       dislikes: ratings?.filter(r => r.direction === 'left').length || 0,
       superlikes: ratings?.filter(r => r.direction === 'up').length || 0
     };
+    
+    console.log('📊 Dashboard stats:', stats);
     
     stats.likeRate = stats.totalRatings > 0
       ? ((stats.likes + stats.superlikes) / stats.totalRatings) * 100

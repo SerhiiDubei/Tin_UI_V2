@@ -5,6 +5,7 @@ import routes from './routes/index.js';
 import { errorHandler, notFoundHandler } from './middleware/errorHandler.js';
 import { logger } from './middleware/logger.js';
 import { testConnection } from './db/supabase.js';
+import { initializeStorage } from './services/storage.service.js';
 
 const app = express();
 
@@ -49,6 +50,14 @@ async function startServer() {
     if (!connected) {
       console.error('❌ Failed to connect to database. Check your SUPABASE credentials.');
       process.exit(1);
+    }
+    
+    // Initialize storage bucket
+    console.log('📦 Checking storage...');
+    const storageReady = await initializeStorage();
+    if (!storageReady) {
+      console.log('⚠️  Storage not ready, but server will continue...');
+      console.log('   Files will use temporary URLs until bucket is created.');
     }
     
     // Start listening

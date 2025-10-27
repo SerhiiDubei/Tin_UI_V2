@@ -18,8 +18,9 @@ export function useSwipe(userId) {
     setSwipeStartTime(Date.now());
     
     try {
-      const excludeIds = swipeHistory.map(h => h.contentId);
-      const response = await contentAPI.getRandom(userId, excludeIds);
+      // Backend already filters out rated items (except skipped)
+      // So we don't need to pass excludeIds from history
+      const response = await contentAPI.getRandom(userId, []);
       
       if (response.success && response.content) {
         setCurrentContent(response.content);
@@ -33,7 +34,7 @@ export function useSwipe(userId) {
     } finally {
       setLoading(false);
     }
-  }, [userId, swipeHistory]);
+  }, [userId]);
   
   // Handle swipe
   const handleSwipe = useCallback(async (direction, comment = null) => {
@@ -51,12 +52,13 @@ export function useSwipe(userId) {
       );
       
       if (response.success) {
-        // Add to history
+        // Add to history - but skip/down items can be shown again
         setSwipeHistory(prev => [...prev, {
           contentId: currentContent.id,
           direction,
           comment,
-          timestamp: new Date()
+          timestamp: new Date(),
+          isSkipped: direction === 'down' // Mark as skipped
         }]);
         
         // Load next
@@ -70,13 +72,52 @@ export function useSwipe(userId) {
     }
   }, [currentContent, userId, swipeStartTime, loadNext]);
   
+  // Get skipped items count
+  const getSkippedCount = useCallback(() => {
+    return swipeHistory.filter(h => h.isSkipped).length;
+  }, [swipeHistory]);
+
+  // Load specific skipped item
+  const loadSkipped = useCallback(async () => {
+    setLoading(true);
+    setError(null);
+    setSwipeStartTime(Date.now());
+    
+    try {
+      // Get IDs of skipped items
+      const skippedIds = swipeHistory
+        .filter(h => h.isSkipped)
+        .map(h => h.contentId);
+      
+      if (skippedIds.length === 0) {
+        setError('No skipped content');
+        return;
+      }
+      
+      // Get first skipped item
+      const response = await contentAPI.getById(skippedIds[0]);
+      
+      if (response.success && response.data) {
+        setCurrentContent(response.data);
+      } else {
+        setError('Failed to load skipped content');
+      }
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
+  }, [swipeHistory]);
+  
   return {
     currentContent,
     loading,
     error,
     swipeHistory,
     loadNext,
-    handleSwipe
+    handleSwipe,
+    getSkippedCount,
+    loadSkipped
   };
 }
 

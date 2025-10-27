@@ -19,27 +19,28 @@ export async function enhancePrompt(originalPrompt, context = {}) {
 
 YOUR MAIN GOAL: Generate realistic, attractive, diverse photos of people for dating apps.
 
+CRITICAL RULE: The prompt MUST describe ONLY ONE PERSON in ONE PHOTO. Never include multiple people or multiple versions in a single prompt.
+
 IMPORTANT RULES:
 1. Create REALISTIC, photographic images (not illustrations or paintings)
-2. Focus on natural beauty, authentic emotions, genuine smiles
-3. Use natural lighting, realistic backgrounds (apartments, cafes, parks, streets)
-4. Person should look approachable, friendly, attractive but natural
-5. Avoid plastic/fake look, heavy filters, artificial lighting
-6. Include details: clothing style, pose, expression, setting, mood
-7. Make person look confident but not arrogant, attractive but not overly sexual
-8. Age range: 20-35 years old (unless specified otherwise)
-9. Lighting: soft natural light, golden hour, window light preferred
-10. Background: slightly blurred, not distracting
+2. Describe ONLY ONE PERSON per prompt - never "two women" or "multiple people"
+3. Focus on natural beauty, authentic emotions, genuine smiles
+4. Use natural lighting, realistic backgrounds (apartments, cafes, parks, streets)
+5. Person should look approachable, friendly, attractive but natural
+6. Avoid plastic/fake look, heavy filters, artificial lighting
+7. Include details: clothing style, pose, expression, setting, mood
+8. Make person look confident but not arrogant, attractive but not overly sexual
+9. Age range: 20-35 years old (unless specified otherwise)
+10. Lighting: soft natural light, golden hour, window light preferred
+11. Background: slightly blurred, not distracting
 
-VARIETY: If generating multiple images, vary:
-- Hair color/style
-- Clothing style (casual, sporty, elegant)
-- Setting (home, outdoor, cafe, gym)
-- Pose and expression
-- Time of day and lighting
-- Camera angle
+WHEN CREATING VARIATIONS:
+- Create a COMPLETELY SEPARATE prompt for each variation
+- DO NOT write "For a variation..." or "Another version..." in the same prompt
+- Each prompt should describe ONE SINGLE PERSON only
+- Vary: hair color/style, clothing, setting, pose, expression, time of day, camera angle
 
-Return a detailed, specific prompt in Ukrainian or English.`;
+Return a detailed, specific prompt describing ONE PERSON ONLY.`;
 
     const defaultSystemPrompt = 'You are an expert prompt engineer. Improve the given prompt to generate better AI content. Make it detailed, specific, and optimized for image generation.';
     
@@ -48,8 +49,26 @@ Return a detailed, specific prompt in Ukrainian or English.`;
     // Add variation instruction if this is part of a batch
     let userMessage = originalPrompt;
     
-    if (context.variationIndex !== undefined && context.variationIndex > 0) {
-      userMessage += `\n\n[VARIATION ${context.variationIndex + 1}]: Create a DIFFERENT version with unique details (different hair, clothes, setting, pose, expression). Keep the main theme but change visual details significantly.`;
+    if (context.variationIndex !== undefined) {
+      // Add instruction to create variations WITHOUT adding text markers or multiple descriptions
+      userMessage += `\n\n🚨 CRITICAL: Create a SINGLE, STANDALONE prompt describing ONE PERSON ONLY.
+
+Make this variation UNIQUE by changing:
+- Hair color and style (blonde, brunette, redhead, etc.)
+- Clothing style and colors (casual, elegant, sporty)
+- Pose and expression (different emotion, angle)
+- Setting or background (park, café, home, street)
+- Lighting conditions (golden hour, sunset, natural light)
+
+DO NOT:
+❌ Write "For a variation..." or "Another version..." 
+❌ Include multiple descriptions in one prompt
+❌ Describe multiple people or versions
+
+DO:
+✅ Write ONE complete prompt for ONE person
+✅ Make it visually distinct from other variations
+✅ Keep it as a standalone description`;
     }
     
     // Add insights if available

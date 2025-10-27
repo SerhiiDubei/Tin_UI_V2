@@ -6,12 +6,16 @@ const SwipeCard = ({ content, onSwipe }) => {
   const [position, setPosition] = useState({ x: 0, y: 0 });
   const [startPos, setStartPos] = useState({ x: 0, y: 0 });
   const [rotation, setRotation] = useState(0);
+  const [imageError, setImageError] = useState(false);
+  const [videoError, setVideoError] = useState(false);
   const cardRef = useRef(null);
 
-  // Reset card position
+  // Reset card position and errors when content changes
   useEffect(() => {
     setPosition({ x: 0, y: 0 });
     setRotation(0);
+    setImageError(false);
+    setVideoError(false);
   }, [content]);
 
   const handleStart = (clientX, clientY) => {
@@ -71,10 +75,10 @@ const SwipeCard = ({ content, onSwipe }) => {
 
     if (Math.abs(x) > Math.abs(y)) {
       if (x > threshold) return { text: '👍 Like', className: 'positive' };
-      if (x < -threshold) return { text: '👎 Reject', className: 'negative' };
+      if (x < -threshold) return { text: '👎 Dislike', className: 'negative' };
     } else {
       if (y < -threshold) return { text: '⭐ Superlike', className: 'positive' };
-      if (y > threshold) return { text: '🔄 Reroll', className: 'neutral' };
+      if (y > threshold) return { text: '⏭️ Skip', className: 'neutral' };
     }
     return null;
   };
@@ -112,69 +116,62 @@ const SwipeCard = ({ content, onSwipe }) => {
         onTouchMove={(e) => isDragging && handleMove(e.touches[0].clientX, e.touches[0].clientY)}
         onTouchEnd={handleEnd}
       >
-        {/* Content Display */}
+        {/* Content Display - Clean, no text overlay */}
         <div className="card-content">
-          {(content.media_type === 'image' || content.type === 'image') && content.url && (
+          {(content.media_type === 'image' || content.type === 'image') && content.url && !imageError && (
             <img
+              key={content.id} 
               src={content.url}
-              alt={content.prompt || content.original_prompt || 'Generated content'}
+              alt="Generated content"
               className="card-image"
               draggable="false"
-              onError={(e) => {
-                e.target.style.display = 'none';
-                const parent = e.target.parentElement;
-                if (parent) {
-                  const errorDiv = document.createElement('div');
-                  errorDiv.className = 'card-text';
-                  errorDiv.innerHTML = '<h3>Image failed to load</h3>';
-                  parent.appendChild(errorDiv);
-                }
+              onError={() => {
+                console.error('❌ Image failed to load:', {
+                  id: content.id,
+                  url: content.url,
+                  isReplicate: content.url.includes('replicate.delivery'),
+                  isSupabase: content.url.includes('supabase.co/storage')
+                });
+                setImageError(true);
+              }}
+              onLoad={() => {
+                console.log('✅ Image loaded:', {
+                  id: content.id,
+                  urlType: content.url.includes('supabase.co/storage') ? 'Supabase Storage' : 'Replicate (temp)'
+                });
               }}
             />
           )}
-          {(content.media_type === 'video' || content.type === 'video') && content.url && (
+          
+          {(content.media_type === 'video' || content.type === 'video') && content.url && !videoError && (
             <video
+              key={content.id}
               src={content.url}
               className="card-video"
               controls
               playsInline
               preload="metadata"
-              onError={(e) => {
-                e.target.style.display = 'none';
-                const parent = e.target.parentElement;
-                if (parent) {
-                  const errorDiv = document.createElement('div');
-                  errorDiv.className = 'card-text';
-                  errorDiv.innerHTML = '<h3>Video failed to load</h3>';
-                  parent.appendChild(errorDiv);
-                }
-              }}
+              onError={() => setVideoError(true)}
             />
           )}
+          
           {(content.media_type === 'audio' || content.type === 'audio') && content.url && (
-            <div className="card-audio-container">
+            <div className="card-audio-container" key={content.id}>
+              <div className="audio-icon">🎵</div>
               <audio src={content.url} controls className="card-audio" preload="metadata" />
-              <p className="audio-title">{content.prompt || content.original_prompt || 'Audio Content'}</p>
             </div>
           )}
-          {(!content.url || !['image', 'video', 'audio'].includes(content.media_type || content.type)) && (
-            <div className="card-text">
-              <h3>{content.prompt || content.original_prompt || 'Content'}</h3>
-              <p>Media type: {content.media_type || content.type || 'unknown'}</p>
-              {content.model && <p className="card-model-info">Model: {content.model}</p>}
+          
+          {/* Show error if image or video failed to load */}
+          {(imageError || videoError) && (
+            <div className="card-error">
+              <div>
+                <p>❌ {imageError ? 'Image' : 'Video'} failed to load</p>
+                <p style={{ fontSize: '0.9rem', color: '#999', marginTop: '0.5rem' }}>
+                  URL may have expired. Try regenerating this content.
+                </p>
+              </div>
             </div>
-          )}
-        </div>
-
-        {/* Metadata */}
-        <div className="card-info">
-          <h3>{content.prompt || content.original_prompt || content.enhanced_prompt || 'Generated Content'}</h3>
-          <div className="card-meta">
-            <span className="card-type">{content.media_type || content.type || 'unknown'}</span>
-            {content.model && <span className="card-model">{content.model}</span>}
-          </div>
-          {content.template_id && (
-            <p className="card-template">Template: {content.template_id}</p>
           )}
         </div>
 
@@ -184,14 +181,6 @@ const SwipeCard = ({ content, onSwipe }) => {
             {swipeHint.text}
           </div>
         )}
-      </div>
-
-      {/* Swipe Instructions */}
-      <div className="swipe-instructions">
-        <div className="instruction up">↑ Superlike</div>
-        <div className="instruction right">→ Like</div>
-        <div className="instruction down">↓ Reroll</div>
-        <div className="instruction left">← Reject</div>
       </div>
     </div>
   );
