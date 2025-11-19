@@ -10,9 +10,18 @@ const openai = new OpenAI({
  */
 export async function enhancePrompt(originalPrompt, context = {}) {
   try {
+    console.log('\n' + '='.repeat(80));
+    console.log('🤖 OPENAI PROMPT ENHANCEMENT - START');
+    console.log('='.repeat(80));
+    console.log('📝 Original Prompt:', originalPrompt);
+    console.log('🎯 Context:', JSON.stringify(context, null, 2));
+    
     // Determine if this is dating content
     const isDating = context.category === 'dating' || 
                      /дівчин|хлопц|жінк|чолов|баб|тьолк|чувак|пацан|дівк|красун|модел|люд|особ|man|woman|girl|boy|person|model|флірт|роман|date|dating|romance|flirt|attractive|sexy|cute/i.test(originalPrompt);
+    
+    console.log('🎭 Content Type:', isDating ? 'DATING' : 'GENERAL');
+    console.log('🔢 Variation Index:', context.variationIndex !== undefined ? context.variationIndex : 'N/A');
     
     // Dating-specific system prompt
     const datingSystemPrompt = `You are an expert prompt engineer specializing in creating dating profile photos and romantic content. 
@@ -74,16 +83,44 @@ DO:
     // Add insights if available
     if (context.insights) {
       const { likes = [], dislikes = [] } = context.insights;
+      console.log('\n📊 USER INSIGHTS DETECTED:');
+      console.log('   ❤️  Likes:', likes.length, 'items');
+      console.log('   💔 Dislikes:', dislikes.length, 'items');
+      
       if (likes.length > 0 || dislikes.length > 0) {
         userMessage += '\n\nUser preferences (from previous feedback):';
         if (likes.length > 0) {
-          userMessage += `\nLikes: ${likes.slice(0, 5).map(l => l.keyword || l).join(', ')}`;
+          const likesList = likes.slice(0, 5).map(l => l.keyword || l).join(', ');
+          userMessage += `\nLikes: ${likesList}`;
+          console.log('   ✅ Adding likes to prompt:', likesList);
         }
         if (dislikes.length > 0) {
-          userMessage += `\nAvoid: ${dislikes.slice(0, 5).map(d => d.keyword || d).join(', ')}`;
+          const dislikesList = dislikes.slice(0, 5).map(d => d.keyword || d).join(', ');
+          userMessage += `\nAvoid: ${dislikesList}`;
+          console.log('   ❌ Adding dislikes to prompt:', dislikesList);
         }
       }
+    } else {
+      console.log('\n📊 No user insights available');
     }
+    
+    console.log('\n🔧 OpenAI Request Configuration:');
+    console.log('   Model: gpt-4o');
+    console.log('   Temperature:', context.variationIndex !== undefined ? 0.9 : 0.7);
+    console.log('   Max Tokens: 500');
+    
+    console.log('\n📤 SYSTEM PROMPT:');
+    console.log('─'.repeat(80));
+    console.log(systemPrompt);
+    console.log('─'.repeat(80));
+    
+    console.log('\n📤 USER MESSAGE:');
+    console.log('─'.repeat(80));
+    console.log(userMessage);
+    console.log('─'.repeat(80));
+    
+    console.log('\n⏳ Calling OpenAI API...');
+    const startTime = Date.now();
     
     const response = await openai.chat.completions.create({
       model: 'gpt-4o',
@@ -95,9 +132,39 @@ DO:
       max_tokens: 500
     });
     
+    const duration = Date.now() - startTime;
+    const enhancedPrompt = response.choices[0].message.content.trim();
+    
+    console.log('\n✅ OpenAI Response Received!');
+    console.log('   Duration:', duration, 'ms');
+    console.log('   Finish Reason:', response.choices[0].finish_reason);
+    console.log('   Total Tokens:', response.usage?.total_tokens || 'N/A');
+    console.log('   Prompt Tokens:', response.usage?.prompt_tokens || 'N/A');
+    console.log('   Completion Tokens:', response.usage?.completion_tokens || 'N/A');
+    
+    console.log('\n📥 ENHANCED PROMPT:');
+    console.log('─'.repeat(80));
+    console.log(enhancedPrompt);
+    console.log('─'.repeat(80));
+    
+    console.log('\n📊 COMPARISON:');
+    console.log('   Original length:', originalPrompt.length, 'chars');
+    console.log('   Enhanced length:', enhancedPrompt.length, 'chars');
+    console.log('   Change:', (enhancedPrompt.length - originalPrompt.length > 0 ? '+' : '') + (enhancedPrompt.length - originalPrompt.length), 'chars');
+    
+    console.log('\n' + '='.repeat(80));
+    console.log('🤖 OPENAI PROMPT ENHANCEMENT - END');
+    console.log('='.repeat(80) + '\n');
+    
     return {
       success: true,
-      enhancedPrompt: response.choices[0].message.content.trim()
+      enhancedPrompt: enhancedPrompt,
+      meta: {
+        duration,
+        tokens: response.usage?.total_tokens,
+        originalLength: originalPrompt.length,
+        enhancedLength: enhancedPrompt.length
+      }
     };
   } catch (error) {
     console.error('OpenAI enhance error:', error);
@@ -114,6 +181,14 @@ DO:
  */
 export async function detectCategory(prompt, contentType = 'image') {
   try {
+    console.log('\n' + '='.repeat(80));
+    console.log('🎯 OPENAI CATEGORY DETECTION - START');
+    console.log('='.repeat(80));
+    console.log('📝 Prompt:', prompt);
+    console.log('🎬 Content Type:', contentType);
+    console.log('\n⏳ Calling OpenAI API...');
+    const startTime = Date.now();
+    
     const response = await openai.chat.completions.create({
       model: 'gpt-4o-mini',
       messages: [{
@@ -143,11 +218,24 @@ Return ONLY the category name in lowercase English, nothing else.`
       max_tokens: 20
     });
     
+    const duration = Date.now() - startTime;
     const category = response.choices[0].message.content.trim().toLowerCase();
+    
+    console.log('\n✅ Category Detected!');
+    console.log('   Duration:', duration, 'ms');
+    console.log('   Total Tokens:', response.usage?.total_tokens || 'N/A');
+    console.log('   🎭 Category:', category.toUpperCase());
+    console.log('\n' + '='.repeat(80));
+    console.log('🎯 OPENAI CATEGORY DETECTION - END');
+    console.log('='.repeat(80) + '\n');
     
     return {
       success: true,
-      category: category
+      category: category,
+      meta: {
+        duration,
+        tokens: response.usage?.total_tokens
+      }
     };
   } catch (error) {
     console.error('Category detection error:', error);
@@ -164,7 +252,13 @@ Return ONLY the category name in lowercase English, nothing else.`
  */
 export async function analyzeComments(comments) {
   try {
+    console.log('\n' + '='.repeat(80));
+    console.log('🧠 OPENAI COMMENT ANALYSIS - START');
+    console.log('='.repeat(80));
+    
     if (!comments || comments.length === 0) {
+      console.log('⚠️  No comments to analyze');
+      console.log('='.repeat(80) + '\n');
       return {
         success: true,
         analysis: {
@@ -175,9 +269,21 @@ export async function analyzeComments(comments) {
       };
     }
     
-    const commentsText = comments
-      .filter(c => c && c.trim())
-      .join('\n---\n');
+    console.log('📝 Total Comments:', comments.length);
+    const validComments = comments.filter(c => c && c.trim());
+    console.log('✅ Valid Comments:', validComments.length);
+    
+    console.log('\n💬 COMMENTS TO ANALYZE:');
+    console.log('─'.repeat(80));
+    validComments.forEach((comment, idx) => {
+      console.log(`${idx + 1}. ${comment}`);
+    });
+    console.log('─'.repeat(80));
+    
+    const commentsText = validComments.join('\n---\n');
+    
+    console.log('\n⏳ Calling OpenAI API for comment analysis...');
+    const startTime = Date.now();
     
     const response = await openai.chat.completions.create({
       model: 'gpt-4o-mini',
@@ -200,7 +306,40 @@ Output JSON format:
       temperature: 0.3
     });
     
+    const duration = Date.now() - startTime;
     const analysis = JSON.parse(response.choices[0].message.content);
+    
+    console.log('\n✅ Analysis Complete!');
+    console.log('   Duration:', duration, 'ms');
+    console.log('   Total Tokens:', response.usage?.total_tokens || 'N/A');
+    
+    console.log('\n📊 ANALYSIS RESULTS:');
+    console.log('─'.repeat(80));
+    console.log('❤️  LIKES:', analysis.likes?.length || 0, 'keywords');
+    if (analysis.likes && analysis.likes.length > 0) {
+      analysis.likes.forEach((like, idx) => {
+        console.log(`   ${idx + 1}. ${like}`);
+      });
+    }
+    
+    console.log('\n💔 DISLIKES:', analysis.dislikes?.length || 0, 'keywords');
+    if (analysis.dislikes && analysis.dislikes.length > 0) {
+      analysis.dislikes.forEach((dislike, idx) => {
+        console.log(`   ${idx + 1}. ${dislike}`);
+      });
+    }
+    
+    console.log('\n💡 SUGGESTIONS:', analysis.suggestions?.length || 0, 'items');
+    if (analysis.suggestions && analysis.suggestions.length > 0) {
+      analysis.suggestions.forEach((suggestion, idx) => {
+        console.log(`   ${idx + 1}. ${suggestion}`);
+      });
+    }
+    console.log('─'.repeat(80));
+    
+    console.log('\n' + '='.repeat(80));
+    console.log('🧠 OPENAI COMMENT ANALYSIS - END');
+    console.log('='.repeat(80) + '\n');
     
     return {
       success: true,
@@ -208,6 +347,11 @@ Output JSON format:
         likes: analysis.likes || [],
         dislikes: analysis.dislikes || [],
         suggestions: analysis.suggestions || []
+      },
+      meta: {
+        duration,
+        tokens: response.usage?.total_tokens,
+        commentsAnalyzed: validComments.length
       }
     };
   } catch (error) {

@@ -33,7 +33,10 @@ export async function getUserInsights(userId) {
  */
 export async function updateUserInsights(userId) {
   try {
-    console.log(`🔄 Updating insights for user: ${userId}`);
+    console.log('\n' + '🌟'.repeat(40));
+    console.log('📊 USER INSIGHTS UPDATE - START');
+    console.log('🌟'.repeat(40));
+    console.log(`👤 User ID: ${userId}`);
     
     // Get recent ratings (last 50)
     const { data: ratings, error: ratingsError } = await supabase
@@ -50,19 +53,29 @@ export async function updateUserInsights(userId) {
       return { success: false, message: 'No ratings found' };
     }
     
-    console.log(`📊 Found ${ratings.length} ratings`);
+    console.log(`📊 Found ${ratings.length} ratings to analyze`);
     
     // Separate by direction
     const likes = ratings.filter(r => r.direction === 'right' || r.direction === 'up');
     const dislikes = ratings.filter(r => r.direction === 'left');
     
+    console.log(`   ➡️  Right swipes: ${ratings.filter(r => r.direction === 'right').length}`);
+    console.log(`   ⬆️  Up swipes (superlikes): ${ratings.filter(r => r.direction === 'up').length}`);
+    console.log(`   ⬅️  Left swipes: ${ratings.filter(r => r.direction === 'left').length}`);
+    console.log(`   ⬇️  Down swipes: ${ratings.filter(r => r.direction === 'down').length}`);
+    
     // Analyze comments
     const likeComments = likes.map(r => r.comment).filter(c => c);
     const dislikeComments = dislikes.map(r => r.comment).filter(c => c);
     
-    console.log(`💬 Analyzing ${likeComments.length} like comments and ${dislikeComments.length} dislike comments`);
+    console.log(`\n💬 COMMENTS ANALYSIS:`);
+    console.log(`   ❤️  Like comments: ${likeComments.length}`);
+    console.log(`   💔 Dislike comments: ${dislikeComments.length}`);
     
+    console.log('\n🔍 Analyzing LIKE comments...');
     const likeAnalysis = await analyzeComments(likeComments);
+    
+    console.log('\n🔍 Analyzing DISLIKE comments...');
     const dislikeAnalysis = await analyzeComments(dislikeComments);
     
     // Count keywords
@@ -104,11 +117,33 @@ export async function updateUserInsights(userId) {
     
     if (error) throw error;
     
-    console.log('✅ Insights updated successfully:', {
-      likes: likesKeywords.slice(0, 3),
-      dislikes: dislikesKeywords.slice(0, 3),
-      suggestions: allSuggestions.slice(0, 3)
+    console.log('\n✅ INSIGHTS UPDATED SUCCESSFULLY!');
+    console.log('─'.repeat(80));
+    console.log('📈 Statistics:');
+    console.log(`   Total Swipes: ${totalSwipes}`);
+    console.log(`   Likes: ${totalLikes} (${((totalLikes/totalSwipes)*100).toFixed(1)}%)`);
+    console.log(`   Dislikes: ${totalDislikes} (${((totalDislikes/totalSwipes)*100).toFixed(1)}%)`);
+    console.log(`   Superlikes: ${totalSuperlikes}`);
+    
+    console.log('\n❤️  TOP LIKES:');
+    likesKeywords.slice(0, 5).forEach((item, idx) => {
+      console.log(`   ${idx + 1}. ${item.keyword} (${item.count}x)`);
     });
+    
+    console.log('\n💔 TOP DISLIKES:');
+    dislikesKeywords.slice(0, 5).forEach((item, idx) => {
+      console.log(`   ${idx + 1}. ${item.keyword} (${item.count}x)`);
+    });
+    
+    console.log('\n💡 SUGGESTIONS:');
+    allSuggestions.slice(0, 5).forEach((suggestion, idx) => {
+      console.log(`   ${idx + 1}. ${suggestion}`);
+    });
+    console.log('─'.repeat(80));
+    
+    console.log('\n' + '🌟'.repeat(40));
+    console.log('📊 USER INSIGHTS UPDATE - END');
+    console.log('🌟'.repeat(40) + '\n');
     
     return {
       success: true,

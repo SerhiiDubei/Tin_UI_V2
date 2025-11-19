@@ -27,6 +27,17 @@ router.post('/generate', async (req, res) => {
       return res.status(400).json({ error: 'Prompt is required' });
     }
     
+    console.log('\n' + '🎨'.repeat(40));
+    console.log('🎨 CONTENT GENERATION REQUEST - START');
+    console.log('🎨'.repeat(40));
+    console.log('📝 Original Prompt:', prompt);
+    console.log('🎬 Content Type:', contentType);
+    console.log('🔢 Count:', count);
+    console.log('👤 User ID:', userId || 'anonymous');
+    console.log('📋 Template ID:', templateId || 'none');
+    console.log('🎛️  Model Key:', modelKey || 'default');
+    console.log('⚙️  Custom Params:', customParams ? JSON.stringify(customParams) : 'none');
+    
     // Get template if provided
     let template = null;
     if (templateId) {
@@ -41,23 +52,39 @@ router.post('/generate', async (req, res) => {
     // Get user insights if userId provided
     let userInsights = null;
     if (userId) {
+      console.log('\n🔍 Fetching user insights...');
       userInsights = await getUserInsights(userId);
+      if (userInsights) {
+        console.log('✅ User insights found:');
+        console.log('   Total swipes:', userInsights.total_swipes || 0);
+        console.log('   Likes keywords:', (userInsights.likes_json || []).length);
+        console.log('   Dislikes keywords:', (userInsights.dislikes_json || []).length);
+      } else {
+        console.log('⚠️  No user insights available');
+      }
     }
     
     // Build context for enhancement
+    const templateLikes = template?.insights_json?.likes || [];
+    const templateDislikes = template?.insights_json?.dislikes || [];
+    const userLikes = userInsights?.likes_json || [];
+    const userDislikes = userInsights?.dislikes_json || [];
+    
     const context = {
       systemInstructions: template?.system_instructions,
       insights: {
-        likes: [
-          ...(template?.insights_json?.likes || []),
-          ...(userInsights?.likes_json || [])
-        ],
-        dislikes: [
-          ...(template?.insights_json?.dislikes || []),
-          ...(userInsights?.dislikes_json || [])
-        ]
+        likes: [...templateLikes, ...userLikes],
+        dislikes: [...templateDislikes, ...userDislikes]
       }
     };
+    
+    console.log('\n📊 CONTEXT FOR ENHANCEMENT:');
+    console.log('   Template likes:', templateLikes.length);
+    console.log('   User likes:', userLikes.length);
+    console.log('   Template dislikes:', templateDislikes.length);
+    console.log('   User dislikes:', userDislikes.length);
+    console.log('   Total likes in context:', context.insights.likes.length);
+    console.log('   Total dislikes in context:', context.insights.dislikes.length);
     
     // Detect category automatically
     const { category } = await detectCategory(prompt, contentType);
@@ -216,13 +243,24 @@ router.post('/generate', async (req, res) => {
       
       if (error) throw error;
       
+      console.log('\n✅ CONTENT SAVED TO DATABASE');
+      console.log('   ID:', content.id);
+      console.log('   Type:', content.type);
+      console.log('   Model:', content.model);
+      console.log('   URL:', content.url.substring(0, 60) + '...');
+      
+      console.log('\n' + '🎨'.repeat(40));
+      console.log('🎨 CONTENT GENERATION REQUEST - SUCCESS');
+      console.log('🎨'.repeat(40) + '\n');
+      
       res.json({
         success: true,
         content: content
       });
     }
   } catch (error) {
-    console.error('Generate content error:', error);
+    console.error('\n❌ CONTENT GENERATION ERROR:', error);
+    console.log('🎨'.repeat(40) + '\n');
     res.status(500).json({ error: error.message });
   }
 });
