@@ -4,399 +4,358 @@
 ![Node](https://img.shields.io/badge/node-%3E%3D18.0.0-brightgreen)
 ![React](https://img.shields.io/badge/react-18.2.0-blue)
 
-**Платформа для збору людського фідбеку через Tinder-подібний swipe інтерфейс для покращення AI моделей генерації контенту.**
-
-An AI-powered platform that learns your preferences through Tinder-style swipes and generates personalized content based on your feedback.
+**AI платформа, що генерує персоналізований контент на основі ваших вподобань через Tinder-style swipe інтерфейс.**
 
 ---
 
-## ✨ Ключові можливості
+## ✨ Ключові Можливості
 
-### 🎨 AI Генерація контенту
-- **Image & Video Generation**: Висока якість через Replicate API
-- **Smart Prompting**: GPT-4o покращує промпти з врахуванням вивченого контексту
-- **Dating Focus**: Спеціалізація на dating контенті з реалістичними фото
-- **Batch Generation**: До 50 промптів за раз з унікальними варіаціями
+### 🎨 AI Content Generation
+- **Seedream 4.0 Integration** - Реалістичні smartphone фото з 11-параметровою системою
+- **Smart Prompting** - GPT-4o покращує промпти з врахуванням insights
+- **Authentic Imperfections** - Motion blur, lens flare, tilted horizon для реалізму
+- **Era Consistency** - Підтримка 2010-2024 (iPhone 4S → iPhone 14 Pro)
+- **Batch Generation** - До 10 унікальних варіацій одночасно
 
-### 👆 Tinder-подібний інтерфейс
-- **← Left**: Dislike (з опціональним коментарем)
-- **→ Right**: Like
-- **↑ Up**: Superlike (з обов'язковим коментарем)
-- **↓ Down**: Skip/Reroll
-- **Mobile-First Design**: Адаптивний UI для всіх пристроїв
+### 👆 Tinder-Style Interface
+- **← Left** - Dislike (з опціональним коментарем)
+- **→ Right** - Like
+- **↑ Up** - Superlike
+- **↓ Down** - Skip (можна оцінити пізніше)
 
-### 🧠 Інтелектуальна система навчання
-- **LLM-based Analysis**: GPT-4o-mini аналізує коментарі користувачів
-- **Персональні профілі**: Кожен користувач має унікальний профіль переваг
-- **Автоматична категоризація**: Dating/General/Professional
-- **Continuous Learning**: Система постійно вдосконалюється
+### 🧠 Intelligent Learning
+- **User Insights** - OpenAI аналізує коментарі та витягує preferences
+- **Automated Updates** - Insights оновлюються кожні 10 ratings
+- **Personalization** - Кожна генерація враховує ваші вподобання
+- **Category Detection** - Автоматичне визначення dating/nature/architecture
 
-### 🔐 Аутентифікація та багатокористувацькість
-- **User Authentication**: Реєстрація та логін
-- **Admin Panel**: Перегляд всіх користувачів та контенту
-- **User-based Generation**: Персоналізована генерація для кожного користувача
-
-### 📊 Аналітика в реальному часі
-- **Dashboard**: Загальна статистика (контент, свайпи, like rate)
-- **Top Content**: Найкраще згенерований контент
-- **Preference Insights**: Візуалізація переваг користувача
+### 📊 Analytics Dashboard
+- **Real-time Stats** - Likes, dislikes, like rate
+- **Top Content** - Найкращий згенерований контент
+- **Insights Visualization** - Ваші переваги в structured форматі
 
 ---
 
-## 🚀 Швидкий старт
+## 🚀 Quick Start
 
-### Необхідні компоненти
+### Prerequisites
 
-- **Node.js** 18+ ([Завантажити](https://nodejs.org/))
-- **npm** (постачається з Node.js)
-- **Supabase Account** ([Зареєструватись](https://supabase.com/))
-- **Replicate API Key** ([Отримати ключ](https://replicate.com/))
-- **OpenAI API Key** ([Отримати ключ](https://platform.openai.com/))
-
-### Встановлення
-
-#### Крок 1: Клонувати репозиторій
-
-```bash
-git clone https://github.com/SerhiiDubei/Tin_UI_V2.git
-cd Tin_UI_V2
-```
-
-#### Крок 2: Запустити інтерактивне налаштування
-
-```bash
-npm install
-node scripts/setup.js
-```
-
-Скрипт запитає:
-- Supabase URL
-- Supabase Anon Key
-- Replicate API Token
+- Node.js 18+
+- Supabase Account
+- Replicate API Key
 - OpenAI API Key
 
-#### Крок 3: Налаштування бази даних
-
-1. Відкрийте [Supabase Dashboard](https://supabase.com/dashboard)
-2. Виберіть проект → SQL Editor
-3. Скопіюйте вміст `database/migrations/001_initial_schema.sql`
-4. Виконайте SQL міграцію
-5. Перевірте створення таблиць
-
-#### Крок 3.5: Створити Storage Bucket (ОБОВ'ЯЗКОВО) ⭐
-
-**Важливо**: Для постійного зберігання файлів потрібно створити bucket вручну.
-
-1. Supabase Dashboard → **Storage** → **Buckets**
-2. Натисніть **"New Bucket"**
-3. Налаштування:
-   - Name: `generated-content`
-   - Public bucket: **YES** ✅
-   - File size limit: 50 MB
-4. Натисніть **"Create"**
-5. Налаштуйте RLS політики (SQL Editor):
-
-```sql
--- Публічний доступ для читання
-CREATE POLICY "Public read access"
-ON storage.objects FOR SELECT
-USING (bucket_id = 'generated-content');
-
--- Завантаження для всіх
-CREATE POLICY "Allow upload for all"
-ON storage.objects FOR INSERT
-WITH CHECK (bucket_id = 'generated-content');
-```
-
-#### Крок 4: Встановити залежності
+### Installation
 
 ```bash
+# 1. Clone repository
+git clone https://github.com/SerhiiDubei/Tin_UI_V2.git
+cd Tin_UI_V2
+
+# 2. Interactive setup
+npm install
+node scripts/setup.js
+
+# 3. Setup database
+# - Go to Supabase Dashboard → SQL Editor
+# - Run database/migrations/*.sql files
+
+# 4. Create Storage Bucket
+# - Supabase → Storage → New Bucket
+# - Name: generated-content
+# - Public: YES
+
+# 5. Install dependencies & run
 npm run install:all
-```
-
-#### Крок 5: Запустити сервери розробки
-
-```bash
 npm run dev
 ```
 
-- **Frontend**: http://localhost:3000
-- **Backend API**: http://localhost:5000
-
----
-
-## 📁 Структура проекту
-
-```
-Tin_UI_V2/
-│
-├── frontend/                    # React 18 Frontend
-│   ├── src/
-│   │   ├── components/          # UI компоненти
-│   │   ├── hooks/               # Custom React hooks
-│   │   ├── pages/               # Сторінки
-│   │   └── services/            # API інтеграція
-│   └── package.json
-│
-├── backend/                     # Node.js + Express API
-│   └── src/
-│       ├── config/              # Конфігурація
-│       ├── db/                  # Database connection
-│       ├── services/            # Бізнес-логіка
-│       └── routes/              # API endpoints
-│
-├── database/                    # Database schemas
-│   └── migrations/
-│
-├── scripts/                     # Utility scripts
-│   ├── setup.js                 # Інтерактивне налаштування
-│   └── verify_and_fix_db.sh     # Верифікація БД
-│
-└── README.md                    # Ця документація
-```
+**URLs:**
+- Frontend: http://localhost:3000
+- Backend API: http://localhost:5000
 
 ---
 
 ## 🛠️ Tech Stack
 
 ### Frontend
-- **React 18.2.0** - UI library
-- **React Router DOM** - Client-side routing
-- **CSS3** - Custom styling
+- React 18.2.0
+- React Router DOM 6
+- Axios
+- CSS3
 
 ### Backend
-- **Node.js 18+** - Runtime
-- **Express 4.21** - Web framework
-- **Supabase** - PostgreSQL database
-- **OpenAI API** - GPT-4o для покращення промптів
-- **Replicate API** - Генерація зображень/відео
+- Node.js 18+
+- Express 4.21
+- Supabase PostgreSQL
+- OpenAI GPT-4o / GPT-4o-mini
+- Replicate API (ByteDance Seedream-4)
 
-### AI/ML
-- **OpenAI GPT-4o** - Prompt enhancement
-- **OpenAI GPT-4o-mini** - Comment analysis
-- **Replicate Models** - Image/video generation
-
----
-
-## 🗄️ База даних
-
-### Основні таблиці
-
-#### `users`
-Користувачі системи з ролями
-
-#### `prompt_templates`
-Шаблони промптів з навченими insights
-
-#### `content`
-Згенерований контент (зображення/відео)
-
-#### `ratings`
-Зворотній зв'язок користувачів (свайпи)
-
-#### `user_insights`
-Персональні профілі переваг
-
-#### `ai_learnings`
-Збережені промпти та відповіді для покращення системи
+### AI Integration
+- **Seedream 4.0** - 11-parameter smartphone photo system
+- **OpenAI GPT-4o** - Prompt enhancement (800 tokens)
+- **OpenAI GPT-4o-mini** - Category detection, comment analysis
+- **Replicate** - Image generation
 
 ---
 
-## 🎯 Як це працює
-
-### 1. Генерація контенту
+## 📁 Project Structure
 
 ```
-Запит користувача → Backend
-           ↓
-Отримання user insights + template
-           ↓
-GPT-4o покращує prompt з контекстом
-           ↓
-Replicate генерує зображення/відео
-           ↓
-Збереження в БД
-           ↓
-Повернення URL
+Tin_UI_V2/
+├── frontend/                 # React App
+│   └── src/
+│       ├── components/       # UI Components
+│       ├── pages/            # Pages
+│       └── services/         # API Client
+│
+├── backend/                  # Express API
+│   └── src/
+│       ├── services/
+│       │   ├── openai.service.js      # 🆕 Seedream 4.0
+│       │   ├── replicate.service.js
+│       │   └── insights.service.js
+│       └── routes/
+│
+├── database/                 # Database Schema
+│   └── migrations/
+│
+└── docs/                     # Documentation
+    ├── ARCHITECTURE.md       # 📊 ER + IR Diagrams
+    └── SEEDREAM.md          # 📱 Seedream 4.0 Guide
 ```
 
-### 2. Swipe & Навчання
+---
+
+## 🗄️ Database Schema
+
+### 5 Core Tables:
 
 ```
-Користувач робить swipe
-           ↓
-Запис: direction, comment, latency
-           ↓
-Створення rating в БД
-           ↓
-GPT-4o-mini аналізує коментарі
-           ↓
-Оновлення user_insights
-           ↓
-Наступна генерація використовує оновлені insights
+users ←─ content ←─ ratings
+         ↓
+    user_insights
+
+prompt_templates ─→ content
 ```
 
-### 3. AI Learning System
+1. **users** - User accounts (auth)
+2. **prompt_templates** - AI templates with insights
+3. **content** - Generated content (images/video)
+4. **ratings** - User feedback (swipes + comments)
+5. **user_insights** - Learned preferences
+
+**Details:** See [ARCHITECTURE.md](./docs/ARCHITECTURE.md)
+
+---
+
+## 🎯 How It Works
+
+### 1. Content Generation Flow
 
 ```
-Промпт + Відповідь → ai_learnings таблиця
-           ↓
-Користувач оцінює (1-5 зірок)
-           ↓
-Система збирає найкращі приклади
-           ↓
-Використання для покращення майбутніх генерацій
+User Prompt
+    ↓
+Detect Category (GPT-4o-mini)
+    ↓
+Fetch User Insights (from ratings + comments)
+    ↓
+Enhance Prompt (GPT-4o + Seedream 4.0)
+    ↓
+Generate Image (Replicate Seedream-4)
+    ↓
+Save to Database & Storage
+    ↓
+Return URL
 ```
+
+### 2. Learning Flow
+
+```
+User Swipes (left/right/up/down)
+    ↓
+Save Rating (+ optional comment)
+    ↓
+Every 10 Ratings:
+    ↓
+Analyze Comments (GPT-4o-mini)
+    ↓
+Extract Keywords (likes/dislikes)
+    ↓
+Update user_insights
+    ↓
+Next Generation Uses Insights
+```
+
+---
+
+## 📱 Seedream 4.0 System
+
+### 11-Parameter Modular System
+
+**TIER 1 - MANDATORY:**
+1. SMARTPHONE_PHOTO_STYLE (filename, device, era)
+2. SUBJECT (person description)
+
+**TIER 2 - SITUATIONAL (3-4):**
+3. COMPOSITION (framing, angles)
+4. BACKGROUND (setting)
+5. LIGHTING (source, direction)
+
+**TIER 3 - ENHANCEMENT (1-2):**
+6. COLOR_PALETTE
+7. MOOD_ATMOSPHERE
+8. MOTION_DYNAMICS
+9. DEPTH_FOCUS
+10. TEXTURE_DETAIL
+11. TIME_WEATHER
+
+### Example Output:
+
+```
+IMG_5847.HEIC, iPhone 14 Pro, 2023 casual aesthetic.
+
+A 26-year-old woman with shoulder-length blonde hair and subtle 
+freckles, genuine smile while sitting at a café table. Close-up 
+shot from slightly above eye level, subject positioned using rule 
+of thirds. Soft natural window light from the left creating gentle 
+shadows on the right side of face. Warm, inviting atmosphere with 
+slightly boosted saturation. Slight motion blur on hands, small 
+lens flare visible in upper right corner.
+```
+
+**Details:** See [SEEDREAM.md](./docs/SEEDREAM.md)
 
 ---
 
 ## 🔧 API Endpoints
 
 ### Content
-- `POST /api/content/generate` - Генерувати контент
-- `POST /api/content/generate-batch` - Batch генерація
-- `GET /api/content/:id` - Отримати контент
-- `GET /api/content/random/next` - Випадковий контент
+```
+POST   /api/content/generate         # Generate content
+GET    /api/content/:id              # Get by ID
+GET    /api/content/random/next      # Random for swipe
+```
 
 ### Ratings
-- `POST /api/ratings` - Створити rating
-- `GET /api/ratings` - Список ratings
-- `GET /api/ratings/stats` - Статистика користувача
+```
+POST   /api/ratings                  # Create rating
+GET    /api/ratings                  # List ratings
+GET    /api/ratings/stats            # User statistics
+```
 
 ### Insights
-- `GET /api/insights/user/:userId` - User insights
-- `POST /api/insights/user/:userId/update` - Оновити insights
-- `GET /api/insights/dashboard` - Dashboard дані
-
-### AI Learning
-- `POST /api/learning/save` - Зберегти промпт/відповідь
-- `POST /api/learning/:id/rate` - Оцінити (1-5 зірок)
-- `GET /api/learning/best` - Найкращі приклади
+```
+GET    /api/insights/user/:userId           # Get insights
+POST   /api/insights/user/:userId/update    # Trigger update
+GET    /api/insights/dashboard               # Dashboard data
+```
 
 ---
 
-## 📊 Система навчання AI
+## 📊 Performance Metrics
 
-### Автоматичне збереження
-Кожен промпт та відповідь автоматично зберігається в `ai_learnings`:
-- Original prompt
-- Enhanced prompt
-- Category (Dating/General/Professional)
-- User rating (1-5 зірок)
-- Generation parameters
-
-### База знань
-Система накопичує найкращі приклади (рейтинг 4-5 зірок) та використовує їх для:
-- Покращення майбутніх промптів
-- Аналізу паттернів
-- Персоналізації для користувача
-
-### Детальніше
-Повна документація: [TECHNICAL.md](./TECHNICAL.md)
+| Metric | Value |
+|--------|-------|
+| **Prompt Length** | 300-500 chars |
+| **Parameters Used** | 5-7 / 11 |
+| **Generation Time** | 35-40 sec |
+| **OpenAI Tokens** | 600-800 |
+| **Cost per Image** | ~$0.034 |
+| **Realism Level** | HIGH ✨ |
 
 ---
 
 ## 🚀 Deployment
 
-### Frontend (GitHub Pages)
+### Frontend (Vercel/GitHub Pages)
+```bash
+npm run build:frontend
+# Deploy build/ directory
+```
 
-1. Налаштуйте `homepage` в `package.json`:
-   ```json
-   "homepage": "https://SerhiiDubei.github.io/Tin_UI_V2"
-   ```
+### Backend (Vercel/Railway)
+```bash
+# Set environment variables:
+SUPABASE_URL=...
+SUPABASE_ANON_KEY=...
+OPENAI_API_KEY=...
+REPLICATE_API_TOKEN=...
 
-2. Build і deploy:
-   ```bash
-   npm run build:frontend
-   ```
+# Deploy backend/ directory
+```
 
-### Backend (Railway / Render)
+---
 
-1. Підключіть GitHub repository
-2. Встановіть environment variables
-3. Deploy з директорії `backend/`
+## 📚 Documentation
+
+- **README.md** (this file) - Overview & Quick Start
+- **[ARCHITECTURE.md](./docs/ARCHITECTURE.md)** - ER Diagrams, Database Schema, Architecture
+- **[SEEDREAM.md](./docs/SEEDREAM.md)** - Seedream 4.0 Integration Guide
 
 ---
 
 ## 🐛 Troubleshooting
 
-### Backend не запускається
-- Перевірте `.env` файл
-- Переконайтеся, що Supabase credentials правильні
-- Запустіть `npm install` в `backend/`
+### Images expire after 24-48h
+✅ **Fixed!** Now using Supabase Storage for permanent URLs.
 
-### Frontend не підключається до API
-- Перевірте, що backend запущений на порту 5000
-- Перевірте `REACT_APP_API_URL` в `frontend/.env`
+### No insights updating
+- Check that you have 10+ ratings with comments
+- Trigger manually: `POST /api/insights/user/:userId/update`
 
-### Помилки бази даних
-- Виконайте `scripts/verify_and_fix_db.sh`
-- Перевірте міграції в Supabase Dashboard
+### OpenAI errors
+- Check API key is valid
+- Verify billing is active
+- Check rate limits
 
 ---
 
-## 📝 Документація
+## ✅ Project Status
 
-- **README.md** (цей файл) - Огляд та швидкий старт
-- **TECHNICAL.md** - Технічна документація, API, архітектура
-- **GUIDES.md** - Посібники по використанню та розробці
+**Version:** 1.2.0  
+**Last Updated:** 2025-11-21  
+**Status:** ✅ **PRODUCTION READY**
+
+### Recent Updates:
+
+**v1.2.0 (2025-11-21):**
+- ✅ Seedream 4.0 Integration (11-parameter system)
+- ✅ Enhanced prompt generation (300-500 chars)
+- ✅ Era consistency (2010-2024)
+- ✅ Authentic imperfections
+- ✅ Parameter detection & validation
+- ✅ Comprehensive documentation
+
+**v1.1.0 (2025-10-27):**
+- ✅ Permanent Storage (Supabase)
+- ✅ URL Migration Tool
+- ✅ Auto-download on generation
+
+**v1.0.0:**
+- ✅ Full frontend + backend
+- ✅ User authentication
+- ✅ AI Learning System
+- ✅ Batch generation
+- ✅ Admin Panel
 
 ---
 
 ## 🤝 Contributing
 
-Contributions are welcome! Дотримуйтесь правил:
+Contributions welcome! 
 
-1. Fork репозиторій
-2. Створіть feature branch
-3. Зробіть commit змін
-4. Відкрийте Pull Request
-
----
-
-## 📧 Контакти
-
-**Project Link**: https://github.com/SerhiiDubei/Tin_UI_V2
-
-**Issues**: https://github.com/SerhiiDubei/Tin_UI_V2/issues
+1. Fork the repository
+2. Create feature branch
+3. Commit changes
+4. Open Pull Request
 
 ---
 
-## ✅ Статус проекту
+## 📧 Contact
 
-**Last Updated**: October 27, 2025
-
-**Status**: ✅ **PRODUCTION READY**
-
-### Реалізовано:
-- ✅ Повний frontend з React 18
-- ✅ Повний backend API
-- ✅ Аутентифікація та багатокористувацькість
-- ✅ AI Learning System з рейтингами
-- ✅ Batch генерація з унікальними промптами
-- ✅ Dating-focused контент
-- ✅ Admin Panel
-- ✅ Database verification tools
-- ✅ **Permanent Storage** - контент зберігається назавжди в Supabase Storage
-- ✅ **URL Migration Tool** - міграція існуючих тимчасових URL
-
-### 🔧 Останні виправлення (27.10.2025):
-
-**Проблема**: Фото не відображалися через 24-48 годин, тому що Replicate URL закінчувалися.
-
-**Рішення**: 
-- ✅ Автоматичне завантаження файлів у Supabase Storage
-- ✅ Постійні URL, які ніколи не закінчуються
-- ✅ Інструмент міграції для існуючого контенту
-
-**Що потрібно зробити**:
-1. Створити bucket `generated-content` в Supabase Storage (див. Крок 3.5) - **ОБОВ'ЯЗКОВО**
-2. ~~Мігрувати існуючий контент~~ - **НЕ ОБОВ'ЯЗКОВО** (тільки якщо є старі фото)
-3. Всі нові фото автоматично зберігаються правильно - **АВТОМАТИЧНО** ✅
-
-**Міграція** потрібна тільки один раз для старого контенту. Нові фото працюють автоматично!
-
-**Детальніше**: Дивіться [GUIDES.md](./GUIDES.md) → "Виправлення проблеми з фото"
+**Repository:** https://github.com/SerhiiDubei/Tin_UI_V2  
+**Issues:** https://github.com/SerhiiDubei/Tin_UI_V2/issues
 
 ---
 
